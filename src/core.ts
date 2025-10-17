@@ -81,121 +81,266 @@ export const serializeStack = (stack: StackItem[]) => {
 };
 
 export const getHTMLSnippet = (element: Element) => {
-  const getElementTag = (el: Element) => {
+  // Semantic tags that are considered distinguishing
+  const semanticTags = new Set([
+    "article",
+    "aside",
+    "footer",
+    "form",
+    "header",
+    "main",
+    "nav",
+    "section",
+  ]);
+
+  // Check if element has distinguishing features
+  const hasDistinguishingFeatures = (el: Element): boolean => {
     const tagName = el.tagName.toLowerCase();
+    // Semantic tags are always distinguishing
+    if (semanticTags.has(tagName)) return true;
+    // Elements with id are distinguishing
+    if (el.id) return true;
+    // Elements with meaningful classes are distinguishing
+    if (el.className && typeof el.className === "string") {
+      const classes = el.className.trim();
+      if (classes && classes.length > 0) return true;
+    }
+    // Elements with data attributes are distinguishing
+    return Array.from(el.attributes).some((attr) =>
+      attr.name.startsWith("data-")
+    );
+  };
 
-    // Priority attributes to show
-    const importantAttrs = [
-      "id",
-      "class",
-      "name",
-      "type",
-      "role",
-      "aria-label",
-    ];
-    const maxValueLength = 50;
+  // Build ancestor chain with distinguishing features
+  const getAncestorChain = (el: Element, maxDepth: number = 10): Element[] => {
+    const ancestors: Element[] = [];
+    let current = el.parentElement;
+    let depth = 0;
 
-    const attrs = Array.from(el.attributes)
-      .filter((attr) => {
-        // Show important attributes or data-* attributes
-        return (
-          importantAttrs.includes(attr.name) || attr.name.startsWith("data-")
-        );
-      })
-      .map((attr) => {
-        let value = attr.value;
-        // Truncate long values
-        if (value.length > maxValueLength) {
-          value = value.substring(0, maxValueLength) + "...";
+    while (current && depth < maxDepth && current.tagName !== "BODY") {
+      if (hasDistinguishingFeatures(current)) {
+        ancestors.push(current);
+        // Stop after finding 2-3 distinguishing ancestors
+        if (ancestors.length >= 3) break;
+      }
+      current = current.parentElement;
+      depth++;
+    }
+
+    return ancestors.reverse(); // Top-down order
+  };
+
+  // Generate compact CSS selector path
+  const getCSSPath = (el: Element): string => {
+    const parts: string[] = [];
+    let current: Element | null = el;
+    let depth = 0;
+    const maxDepth = 5;
+
+    while (current && depth < maxDepth && current.tagName !== "BODY") {
+      let selector = current.tagName.toLowerCase();
+
+      if (current.id) {
+        selector += `#${current.id}`;
+        parts.unshift(selector);
+        break; // ID is unique, no need to go further
+      } else if (
+        current.className &&
+        typeof current.className === "string" &&
+        current.className.trim()
+      ) {
+        const classes = current.className
+          .trim()
+          .split(/\s+/)
+          .slice(0, 2); // Take first 2 classes
+        selector += `.${classes.join(".")}`;
+      }
+
+      // Add nth-child only if no id/class
+      if (
+        !current.id &&
+        (!current.className || !current.className.trim()) &&
+        current.parentElement
+      ) {
+        const siblings = Array.from(current.parentElement.children);
+        const index = siblings.indexOf(current);
+        if (index >= 0 && siblings.length > 1) {
+          selector += `:nth-child(${index + 1})`;
         }
-        return `${attr.name}="${value}"`;
-      })
-      .join(" ");
+      }
 
-    return attrs ? `<${tagName} ${attrs}>` : `<${tagName}>`;
+      parts.unshift(selector);
+      current = current.parentElement;
+      depth++;
+    }
+
+    return parts.join(" > ");
+  };
+
+  // Get compact element tag with smart attribute filtering
+  const getElementTag = (el: Element, compact: boolean = false): string => {
+    const tagName = el.tagName.toLowerCase();
+    const attrs: string[] = [];
+
+    // Always show id
+    if (el.id) {
+      attrs.push(`id="${el.id}"`);
+    }
+
+    // Show classes (limit to first 2-3 in compact mode)
+    if (el.className && typeof el.className === "string") {
+      const classes = el.className.trim().split(/\s+/);
+      if (classes.length > 0 && classes[0]) {
+        const displayClasses = compact ? classes.slice(0, 3) : classes;
+        let classStr = displayClasses.join(" ");
+        // Truncate if too long
+        if (classStr.length > 30) {
+          classStr = classStr.substring(0, 30) + "...";
+        }
+        attrs.push(`class="${classStr}"`);
+      }
+    }
+
+    // Show important data attributes (only first one in compact mode)
+    const dataAttrs = Array.from(el.attributes).filter((attr) =>
+      attr.name.startsWith("data-")
+    );
+    const displayDataAttrs = compact ? dataAttrs.slice(0, 1) : dataAttrs;
+    for (const attr of displayDataAttrs) {
+      let value = attr.value;
+      if (value.length > 20) {
+        value = value.substring(0, 20) + "...";
+      }
+      attrs.push(`${attr.name}="${value}"`);
+    }
+
+    // Show aria-label if present (truncated)
+    const ariaLabel = el.getAttribute("aria-label");
+    if (ariaLabel && !compact) {
+      let value = ariaLabel;
+      if (value.length > 20) {
+        value = value.substring(0, 20) + "...";
+      }
+      attrs.push(`aria-label="${value}"`);
+    }
+
+    return attrs.length > 0 ? `<${tagName} ${attrs.join(" ")}>` : `<${tagName}>`;
   };
 
   const getClosingTag = (el: Element) => {
     return `</${el.tagName.toLowerCase()}>`;
   };
 
-  const getChildrenCount = (el: Element) => {
-    const children = Array.from(el.children);
-    return children.length;
-  };
-
   const getTextContent = (el: Element) => {
-    // Get direct text content (not including nested elements)
-    let text = "";
-    const childNodes = Array.from(el.childNodes);
-    for (const node of childNodes) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        text += node.textContent || "";
-      }
-    }
-    text = text.trim();
-
-    // Truncate long text
-    const maxLength = 100;
+    let text = el.textContent || "";
+    text = text.trim().replace(/\s+/g, " ");
+    const maxLength = 60; // Reduced from 100
     if (text.length > maxLength) {
       text = text.substring(0, maxLength) + "...";
     }
-
     return text;
+  };
+
+  // Get distinguishing info about a sibling
+  const getSiblingIdentifier = (el: Element): null | string => {
+    if (el.id) return `#${el.id}`;
+    if (el.className && typeof el.className === "string") {
+      const classes = el.className.trim().split(/\s+/);
+      if (classes.length > 0 && classes[0]) {
+        return `.${classes[0]}`;
+      }
+    }
+    return null;
   };
 
   const lines: string[] = [];
 
-  // Add parent context if it exists
-  const parent = element.parentElement;
-  if (parent) {
-    lines.push(getElementTag(parent));
+  // Add CSS path
+  lines.push(`Path: ${getCSSPath(element)}`);
+  lines.push("");
 
-    // Show sibling count before target element
+  // Get ancestor chain
+  const ancestors = getAncestorChain(element);
+
+  // Render ancestors
+  for (let i = 0; i < ancestors.length; i++) {
+    const indent = "  ".repeat(i);
+    lines.push(indent + getElementTag(ancestors[i], true));
+  }
+
+  // Render sibling context (for immediate parent only)
+  const parent = element.parentElement;
+  let targetIndex = -1;
+  if (parent) {
     const siblings = Array.from(parent.children);
-    const targetIndex = siblings.indexOf(element);
+    targetIndex = siblings.indexOf(element);
+
+    // Check siblings before
     if (targetIndex > 0) {
-      lines.push(
-        `  ... (${targetIndex} element${targetIndex === 1 ? "" : "s"})`
-      );
+      // Check if previous sibling has distinguishing features
+      const prevSibling = siblings[targetIndex - 1];
+      const prevId = getSiblingIdentifier(prevSibling);
+      if (prevId && targetIndex <= 2) {
+        // Only show if close to start
+        const indent = "  ".repeat(ancestors.length);
+        lines.push(`${indent}  ${getElementTag(prevSibling, true)}`);
+        lines.push(`${indent}  </${prevSibling.tagName.toLowerCase()}>`);
+      } else if (targetIndex > 0) {
+        const indent = "  ".repeat(ancestors.length);
+        lines.push(`${indent}  ... (${targetIndex} element${targetIndex === 1 ? "" : "s"})`);
+      }
     }
   }
 
-  // Add the target element with proper indentation
-  const indent = parent ? "  " : "";
-  lines.push(indent + "<!-- SELECTED -->");
-  lines.push(indent + getElementTag(element));
+  // Render target element
+  const indent = "  ".repeat(ancestors.length);
+  lines.push(indent + "  <!-- SELECTED -->");
 
-  // Show text content and/or children count
   const textContent = getTextContent(element);
-  const childrenCount = getChildrenCount(element);
+  const childrenCount = element.children.length;
 
-  if (textContent) {
-    lines.push(`${indent}  ${textContent}`);
-  }
-
-  if (childrenCount > 0) {
+  // Use single-line format for simple elements
+  if (textContent && childrenCount === 0 && textContent.length < 40) {
     lines.push(
-      `${indent}  ... (${childrenCount} element${
-        childrenCount === 1 ? "" : "s"
-      })`
+      `${indent}  ${getElementTag(element)}${textContent}${getClosingTag(element)}`
     );
+  } else {
+    lines.push(indent + "  " + getElementTag(element));
+    if (textContent) {
+      lines.push(`${indent}    ${textContent}`);
+    }
+    if (childrenCount > 0) {
+      lines.push(
+        `${indent}    ... (${childrenCount} element${childrenCount === 1 ? "" : "s"})`
+      );
+    }
+    lines.push(indent + "  " + getClosingTag(element));
   }
 
-  lines.push(indent + getClosingTag(element));
-
-  // Close parent if it exists
-  if (parent) {
-    // Show siblings after target element
+  // Render siblings after
+  if (parent && targetIndex >= 0) {
     const siblings = Array.from(parent.children);
-    const targetIndex = siblings.indexOf(element);
     const siblingsAfter = siblings.length - targetIndex - 1;
     if (siblingsAfter > 0) {
-      lines.push(
-        `  ... (${siblingsAfter} element${siblingsAfter === 1 ? "" : "s"})`
-      );
+      // Check if next sibling has distinguishing features
+      const nextSibling = siblings[targetIndex + 1];
+      const nextId = getSiblingIdentifier(nextSibling);
+      if (nextId && siblingsAfter <= 2) {
+        // Only show if close to end
+        lines.push(`${indent}  ${getElementTag(nextSibling, true)}`);
+        lines.push(`${indent}  </${nextSibling.tagName.toLowerCase()}>`);
+      } else {
+        lines.push(
+          `${indent}  ... (${siblingsAfter} element${siblingsAfter === 1 ? "" : "s"})`
+        );
+      }
     }
-    lines.push(getClosingTag(parent));
+  }
+
+  // Close ancestors
+  for (let i = ancestors.length - 1; i >= 0; i--) {
+    const indent = "  ".repeat(i);
+    lines.push(indent + getClosingTag(ancestors[i]));
   }
 
   return lines.join("\n");

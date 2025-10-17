@@ -1,6 +1,6 @@
 {
   "name": "react-grab",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "description": "",
   "keywords": [],
   "homepage": "https://github.com/aidenybai/react-grab#readme",
@@ -70,6 +70,6 @@
     "access": "public"
   },
   "dependencies": {
-    "bippy": "^0.3.28"
+    "bippy": "^0.3.29"
   }
 }
