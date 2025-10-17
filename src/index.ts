@@ -1,35 +1,61 @@
-import { getFiberFromHostInstance } from "bippy";
-import { getFiberStackTrace, getOwnerStack } from "bippy/dist/source";
-
-export interface StackItem {
-  componentName: string;
-  fileName: string | undefined;
-}
-
-export const getReactData = async (element: Element) => {
-  const fiber = getFiberFromHostInstance(element);
-  if (!fiber) return null;
-  const stackTrace = getFiberStackTrace(fiber);
-  const rawOwnerStack = await getOwnerStack(stackTrace);
-  const stack: StackItem[] = rawOwnerStack
-    .filter((item) => !item.source?.fileName.includes("node_modules"))
-    .map((item) => ({
-      componentName: item.name,
-      fileName: item.source?.fileName,
-    }));
-
-  return {
-    fiber,
-    stack,
-  };
-};
+import {
+  filterStack,
+  getHTMLSnippet,
+  getStack,
+  serializeStack,
+} from "./core.js";
 
 export const init = () => {
   let metaKeyTimer: null | ReturnType<typeof setTimeout> = null;
   let overlay: HTMLDivElement | null = null;
   let isActive = false;
+  let isLocked = false; // Lock element selection after click
   let currentElement: Element | null = null;
   let animationFrame: null | number = null;
+  let pendingCopyText: null | string = null;
+
+  // Copy to clipboard with fallback for when document is not focused
+  const copyToClipboard = async (text: string) => {
+    // If document is not focused, store text and wait for focus
+    if (!document.hasFocus()) {
+      pendingCopyText = text;
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      pendingCopyText = null;
+      // Hide overlay after successful copy
+      hideOverlay();
+    } catch {
+      // Fallback for when clipboard API fails
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-999999px";
+      textarea.style.top = "-999999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try {
+        document.execCommand("copy");
+        pendingCopyText = null;
+        // Hide overlay after successful copy
+        hideOverlay();
+      } catch (execErr) {
+        console.error("Failed to copy to clipboard:", execErr);
+        hideOverlay();
+      }
+      document.body.removeChild(textarea);
+    }
+  };
+
+  // Handle window focus to copy pending text
+  const handleWindowFocus = () => {
+    if (pendingCopyText) {
+      void copyToClipboard(pendingCopyText);
+    }
+  };
 
   // Lerp values for smooth animation
   let currentX = 0;
@@ -72,7 +98,7 @@ export const init = () => {
     if (!overlay || !isActive) return;
 
     // Lerp factor (higher = faster, 0.2 is smooth)
-    const factor = 0.2;
+    const factor = 0.5;
 
     currentX = lerp(currentX, targetX, factor);
     currentY = lerp(currentY, targetY, factor);
@@ -89,6 +115,9 @@ export const init = () => {
   };
 
   const handleMouseMove = (e: MouseEvent) => {
+    // Don't track mouse if element is locked after click
+    if (isLocked) return;
+
     const element = document.elementFromPoint(e.clientX, e.clientY);
     if (!element || element === overlay) return;
 
@@ -110,12 +139,27 @@ export const init = () => {
     e.stopPropagation();
     e.stopImmediatePropagation();
 
+    // Lock the element selection, stop tracking mouse
+    isLocked = true;
+
     const elementToInspect = currentElement;
-    hideOverlay();
 
     if (elementToInspect) {
-      void getReactData(elementToInspect).then((data) => {
-        console.log("React data:", data);
+      void getStack(elementToInspect).then((stack) => {
+        if (!stack) {
+          hideOverlay();
+          return;
+        }
+        const serializedStack = serializeStack(filterStack(stack));
+        const htmlSnippet = getHTMLSnippet(elementToInspect);
+        const payload = `## Referenced element
+${htmlSnippet}
+
+Import traces:
+${serializedStack}
+
+Page: ${window.location.href}`;
+        void copyToClipboard(payload);
       });
     }
   };
@@ -146,6 +190,7 @@ export const init = () => {
 
   const hideOverlay = () => {
     isActive = false;
+    isLocked = false;
     if (overlay) {
       overlay.style.display = "none";
     }
@@ -159,7 +204,6 @@ export const init = () => {
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.metaKey && !metaKeyTimer && !isActive) {
       metaKeyTimer = setTimeout(() => {
-        console.log("Meta key held for 750ms");
         if (!isInsideInputOrTextarea()) {
           showOverlay();
         }
@@ -174,7 +218,8 @@ export const init = () => {
         clearTimeout(metaKeyTimer);
         metaKeyTimer = null;
       }
-      if (isActive) {
+      // Only hide if not locked (waiting for copy to complete)
+      if (isActive && !isLocked) {
         hideOverlay();
       }
     }
@@ -185,6 +230,7 @@ export const init = () => {
   document.addEventListener("mousemove", handleMouseMove);
   document.addEventListener("mousedown", handleMouseDown, true);
   document.addEventListener("click", handleClick, true);
+  window.addEventListener("focus", handleWindowFocus);
 
   return () => {
     if (metaKeyTimer) {
@@ -201,6 +247,7 @@ export const init = () => {
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mousedown", handleMouseDown, true);
     document.removeEventListener("click", handleClick, true);
+    window.removeEventListener("focus", handleWindowFocus);
   };
 };
 
