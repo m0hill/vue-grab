@@ -202,18 +202,25 @@ Page: ${window.location.href}`;
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.metaKey && !metaKeyTimer && !isActive) {
+    // Only trigger on Meta key itself, not other keys while Meta is held
+    // Also prevent repeated keydown events from triggering multiple timers
+    if ((e.key === "Meta" || e.code === "MetaLeft" || e.code === "MetaRight") && !metaKeyTimer && !isActive) {
       metaKeyTimer = setTimeout(() => {
         if (!isInsideInputOrTextarea()) {
           showOverlay();
         }
         metaKeyTimer = null;
       }, 750);
+    } else if (metaKeyTimer && e.key !== "Meta" && e.code !== "MetaLeft" && e.code !== "MetaRight") {
+      // Cancel timer if any other key is pressed while waiting (e.g., Cmd+Tab, Cmd+1)
+      clearTimeout(metaKeyTimer);
+      metaKeyTimer = null;
     }
   };
 
   const handleKeyUp = (e: KeyboardEvent) => {
-    if (!e.metaKey) {
+    // Only respond when the Meta key itself is released
+    if (e.key === "Meta" || e.code === "MetaLeft" || e.code === "MetaRight") {
       if (metaKeyTimer) {
         clearTimeout(metaKeyTimer);
         metaKeyTimer = null;

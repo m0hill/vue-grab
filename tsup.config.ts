@@ -1,5 +1,5 @@
-import { defineConfig, type Options } from "tsup";
 import fs from "node:fs";
+import { defineConfig, type Options } from "tsup";
 
 const banner = `/**
  * @license MIT
@@ -11,39 +11,41 @@ const banner = `/**
  */`;
 
 const DEFAULT_OPTIONS: Options = {
-  entry: [],
   banner: {
     js: banner,
   },
   clean: true,
-  outDir: "./dist",
-  splitting: false,
-  sourcemap: false,
-  format: [],
-  target: "esnext",
-  platform: "browser",
-  treeshake: true,
   dts: true,
-  minify: false,
+  entry: [],
   env: {
     NODE_ENV: process.env.NODE_ENV ?? "development",
-    VERSION: JSON.parse(fs.readFileSync("package.json", "utf8")).version,
+    VERSION: (
+      JSON.parse(fs.readFileSync("package.json", "utf8")) as { version: string }
+    ).version,
   },
   external: [],
+  format: [],
+  minify: false,
+  outDir: "./dist",
+  platform: "browser",
+  sourcemap: false,
+  splitting: false,
+  target: "esnext",
+  treeshake: true,
 };
 
 export default defineConfig([
   {
     ...DEFAULT_OPTIONS,
-    format: ["esm", "cjs"],
     entry: ["./src/index.ts"],
+    format: ["esm", "cjs"],
   },
   {
     ...DEFAULT_OPTIONS,
-    format: ["iife"],
-    outDir: "./dist",
-    minify: process.env.NODE_ENV === "production",
-    globalName: "ReactGrab",
     entry: ["./src/index.ts"],
+    format: ["iife"],
+    globalName: "ReactGrab",
+    minify: process.env.NODE_ENV === "production",
+    outDir: "./dist",
   },
 ]);
