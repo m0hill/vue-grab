@@ -25,7 +25,14 @@ const DEFAULT_OPTIONS: Options = {
   },
   external: [],
   format: [],
+  loader: {
+    ".css": "text",
+  },
   minify: false,
+  onSuccess:
+    process.env.NODE_ENV !== "production"
+      ? "pbcopy < ./dist/index.global.js"
+      : undefined,
   outDir: "./dist",
   platform: "browser",
   sourcemap: false,
@@ -38,13 +45,11 @@ export default defineConfig([
   {
     ...DEFAULT_OPTIONS,
     entry: ["./src/index.ts"],
-    format: ["esm", "cjs"],
-  },
-  {
-    ...DEFAULT_OPTIONS,
-    entry: ["./src/index.ts"],
     format: ["iife"],
     globalName: "ReactGrab",
+    loader: {
+      ".css": "text",
+    },
     minify: process.env.NODE_ENV === "production",
     outDir: "./dist",
   },

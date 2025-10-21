@@ -10,7 +10,9 @@ export const getStack = async (element: Element) => {
   const fiber = getFiberFromHostInstance(element);
   if (!fiber) return null;
   const stackTrace = getFiberStackTrace(fiber);
+  console.log(stackTrace);
   const rawOwnerStack = await getOwnerStack(stackTrace);
+  console.log(rawOwnerStack);
   const stack: StackItem[] = rawOwnerStack.map((item) => ({
     componentName: item.name,
     fileName: item.source?.fileName,

@@ -1,261 +1,369 @@
 import {
+  Hotkey,
+  isKeyPressed,
+  trackHotkeys,
+  watchKeyHeldFor,
+} from "./hotkeys.js";
+import { createSelectionOverlay, showCopyIndicator } from "./overlay.js";
+import { copyTextToClipboard } from "./utils/copy-text.js";
+import {
   filterStack,
   getHTMLSnippet,
   getStack,
   serializeStack,
-} from "./core.js";
+} from "./utils/data.js";
+import { isElementVisible } from "./utils/is-element-visible.js";
+import { ATTRIBUTE_NAME, mountRoot } from "./utils/mount-root.js";
+import { scheduleRunWhenIdle } from "./utils/schedule-run-when-idle.js";
+import { createStore } from "./utils/store.js";
+import { throttle } from "./utils/throttle.js";
 
-export const init = () => {
-  let metaKeyTimer: null | ReturnType<typeof setTimeout> = null;
-  let overlay: HTMLDivElement | null = null;
-  let isActive = false;
-  let isLocked = false; // Lock element selection after click
-  let currentElement: Element | null = null;
-  let animationFrame: null | number = null;
-  let pendingCopyText: null | string = null;
+export interface Options {
+  enabled?: boolean;
+  /**
+   * hotkey to trigger the overlay
+   *
+   * default: "Meta"
+   */
+  hotkey?: Hotkey | Hotkey[];
 
-  // Copy to clipboard with fallback for when document is not focused
-  const copyToClipboard = async (text: string) => {
-    // If document is not focused, store text and wait for focus
-    if (!document.hasFocus()) {
-      pendingCopyText = text;
+  /**
+   * time required (ms) to hold the key to trigger the overlay
+   *
+   * default: 1000
+   */
+  keyHoldDuration?: number;
+}
+
+const THROTTLE_DELAY = 16;
+
+interface LibStore {
+  keyPressTimestamps: Map<Hotkey, number>;
+  mouseX: number;
+  mouseY: number;
+  overlayMode: "copying" | "hidden" | "visible";
+  pressedKeys: Set<Hotkey>;
+}
+
+export const libStore = createStore<LibStore>(() => ({
+  keyPressTimestamps: new Map(),
+  mouseX: -1000,
+  mouseY: -1000,
+  overlayMode: "hidden",
+  pressedKeys: new Set(),
+}));
+
+export const init = (options: Options = {}) => {
+  if (options.enabled === false) {
+    return;
+  }
+
+  const resolvedOptions: Required<Options> = {
+    enabled: true,
+    hotkey: "Meta",
+    keyHoldDuration: 500,
+    ...options,
+  };
+
+  const root = mountRoot();
+  const selectionOverlay = createSelectionOverlay(root);
+  let hoveredElement: Element | null = null;
+  let isCopying = false;
+
+  const checkIsActivationHotkeyPressed = () => {
+    if (Array.isArray(resolvedOptions.hotkey)) {
+      for (const key of resolvedOptions.hotkey) {
+        if (!isKeyPressed(key)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return isKeyPressed(resolvedOptions.hotkey);
+  };
+
+  const isCopyHotkeyPressed = () => {
+    return isKeyPressed("Meta") && isKeyPressed("C");
+  };
+
+  let cleanupActivationHotkeyWatcher: (() => void) | null = null;
+
+  const handleKeyStateChange = (pressedKeys: Set<Hotkey>) => {
+    const { overlayMode } = libStore.getState();
+
+    if (pressedKeys.has("Escape") || pressedKeys.has("Esc")) {
+      libStore.setState((state) => {
+        const nextPressedKeys = new Set(state.pressedKeys);
+        nextPressedKeys.delete("Escape");
+        nextPressedKeys.delete("Esc");
+        const nextTimestamps = new Map(state.keyPressTimestamps);
+        nextTimestamps.delete("Escape");
+        nextTimestamps.delete("Esc");
+
+        const activationKeys = Array.isArray(resolvedOptions.hotkey)
+          ? resolvedOptions.hotkey
+          : [resolvedOptions.hotkey];
+        for (const activationKey of activationKeys) {
+          if (activationKey.length === 1) {
+            nextPressedKeys.delete(activationKey.toLowerCase());
+            nextPressedKeys.delete(activationKey.toUpperCase());
+            nextTimestamps.delete(activationKey.toLowerCase());
+            nextTimestamps.delete(activationKey.toUpperCase());
+          } else {
+            nextPressedKeys.delete(activationKey);
+            nextTimestamps.delete(activationKey);
+          }
+        }
+
+        return {
+          ...state,
+          keyPressTimestamps: nextTimestamps,
+          overlayMode: "hidden",
+          pressedKeys: nextPressedKeys,
+        };
+      });
+      if (cleanupActivationHotkeyWatcher) {
+        cleanupActivationHotkeyWatcher();
+        cleanupActivationHotkeyWatcher = null;
+      }
       return;
     }
 
-    try {
-      await navigator.clipboard.writeText(text);
-      pendingCopyText = null;
-      // Hide overlay after successful copy
-      hideOverlay();
-    } catch {
-      // Fallback for when clipboard API fails
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.style.position = "fixed";
-      textarea.style.left = "-999999px";
-      textarea.style.top = "-999999px";
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-      try {
-        document.execCommand("copy");
-        pendingCopyText = null;
-        // Hide overlay after successful copy
-        hideOverlay();
-      } catch (execErr) {
-        console.error("Failed to copy to clipboard:", execErr);
-        hideOverlay();
+    if (isCopyHotkeyPressed() && overlayMode === "visible") {
+      libStore.setState((state) => ({
+        ...state,
+        overlayMode: "copying",
+      }));
+      return;
+    }
+
+    const isActivationHotkeyPressed = checkIsActivationHotkeyPressed();
+
+    if (!isActivationHotkeyPressed) {
+      if (cleanupActivationHotkeyWatcher) {
+        cleanupActivationHotkeyWatcher();
+        cleanupActivationHotkeyWatcher = null;
       }
-      document.body.removeChild(textarea);
+
+      if (overlayMode !== "hidden") {
+        libStore.setState((state) => ({
+          ...state,
+          overlayMode: "hidden",
+        }));
+      }
+
+      return;
+    }
+
+    if (overlayMode === "hidden" && !cleanupActivationHotkeyWatcher) {
+      cleanupActivationHotkeyWatcher = watchKeyHeldFor(
+        resolvedOptions.hotkey,
+        resolvedOptions.keyHoldDuration,
+        () => {
+          libStore.setState((state) => ({
+            ...state,
+            overlayMode: "visible",
+          }));
+          cleanupActivationHotkeyWatcher = null;
+        }
+      );
     }
   };
 
-  // Handle window focus to copy pending text
-  const handleWindowFocus = () => {
-    if (pendingCopyText) {
-      void copyToClipboard(pendingCopyText);
+  const cleanupKeyStateChangeSubscription = libStore.subscribe(
+    handleKeyStateChange,
+    (state) => state.pressedKeys
+  );
+
+  const handleMouseMove = throttle((event: MouseEvent) => {
+    libStore.setState((state) => ({
+      ...state,
+      mouseX: event.clientX,
+      mouseY: event.clientY,
+    }));
+  }, THROTTLE_DELAY);
+
+  const handleMouseDown = (event: MouseEvent) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const { overlayMode } = libStore.getState();
+
+    if (overlayMode === "hidden") {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+
+    libStore.setState((state) => ({
+      ...state,
+      overlayMode: "copying",
+    }));
+  };
+
+  window.addEventListener("mousemove", handleMouseMove);
+  window.addEventListener("mousedown", handleMouseDown);
+  const cleanupTrackHotkeys = trackHotkeys();
+
+  const getElementAtPosition = (x: number, y: number): Element | null => {
+    const elements = document.elementsFromPoint(x, y);
+
+    for (const element of elements) {
+      if (element.closest(`[${ATTRIBUTE_NAME}]`)) {
+        continue;
+      }
+
+      const computedStyle = window.getComputedStyle(element);
+      if (!isElementVisible(element, computedStyle)) {
+        continue;
+      }
+
+      return element;
+    }
+
+    return null;
+  };
+
+  const handleCopy = async (element: Element) => {
+    const rect = element.getBoundingClientRect();
+    const cleanupCopyIndicator = showCopyIndicator(rect.left, rect.top);
+
+    try {
+      const stack = await getStack(element);
+      const htmlSnippet = getHTMLSnippet(element);
+
+      let text = htmlSnippet;
+
+      if (stack) {
+        const filteredStack = filterStack(stack);
+        const serializedStack = serializeStack(filteredStack);
+        text = `${serializedStack}\n\n${htmlSnippet}`;
+      }
+
+      await copyTextToClipboard(`\n${text}`);
+      const tagName = (element.tagName || "").toLowerCase();
+      cleanupCopyIndicator(tagName);
+    } catch {
+      cleanupCopyIndicator();
     }
   };
 
-  // Lerp values for smooth animation
-  let currentX = 0;
-  let currentY = 0;
-  let currentWidth = 0;
-  let currentHeight = 0;
-  let targetX = 0;
-  let targetY = 0;
-  let targetWidth = 0;
-  let targetHeight = 0;
-  let targetBorderRadius = "";
+  const handleRender = throttle((state: LibStore) => {
+    const { mouseX, mouseY, overlayMode } = state;
 
-  const isInsideInputOrTextarea = () => {
-    const activeElement = document.activeElement;
-    return (
-      activeElement instanceof HTMLInputElement ||
-      activeElement instanceof HTMLTextAreaElement ||
-      activeElement?.tagName === "INPUT" ||
-      activeElement?.tagName === "TEXTAREA"
-    );
-  };
+    if (overlayMode === "hidden") {
+      if (selectionOverlay.isVisible()) {
+        selectionOverlay.hide();
+        hoveredElement = null;
+      }
+      return;
+    }
 
-  const createOverlay = () => {
-    const div = document.createElement("div");
-    div.style.position = "fixed";
-    div.style.border = "2px solid #3b82f6";
-    div.style.backgroundColor = "rgba(59, 130, 246, 0.1)";
-    div.style.pointerEvents = "none";
-    div.style.zIndex = "999999";
-    div.style.transition = "none";
-    document.body.appendChild(div);
-    return div;
-  };
+    if (overlayMode === "copying" && hoveredElement) {
+      const computedStyle = window.getComputedStyle(hoveredElement);
+      const rect = hoveredElement.getBoundingClientRect();
+      selectionOverlay.update({
+        borderRadius: computedStyle.borderRadius || "0px",
+        height: rect.height,
+        transform: computedStyle.transform || "none",
+        width: rect.width,
+        x: rect.left,
+        y: rect.top,
+      });
+      if (!selectionOverlay.isVisible()) {
+        selectionOverlay.show();
+      }
 
-  const lerp = (start: number, end: number, factor: number) => {
-    return start + (end - start) * factor;
-  };
+      if (!isCopying) {
+        isCopying = true;
+        void handleCopy(hoveredElement).finally(() => {
+          libStore.setState((state) => ({
+            ...state,
+            overlayMode: "hidden",
+          }));
+          isCopying = false;
+        });
+      }
+      return;
+    }
 
-  const updateOverlayPosition = () => {
-    if (!overlay || !isActive) return;
+    const element = getElementAtPosition(mouseX, mouseY);
 
-    // Lerp factor (higher = faster, 0.2 is smooth)
-    const factor = 0.5;
+    if (!element) {
+      if (selectionOverlay.isVisible()) {
+        selectionOverlay.hide();
+      }
+      hoveredElement = null;
+      return;
+    }
 
-    currentX = lerp(currentX, targetX, factor);
-    currentY = lerp(currentY, targetY, factor);
-    currentWidth = lerp(currentWidth, targetWidth, factor);
-    currentHeight = lerp(currentHeight, targetHeight, factor);
-
-    overlay.style.left = `${currentX}px`;
-    overlay.style.top = `${currentY}px`;
-    overlay.style.width = `${currentWidth}px`;
-    overlay.style.height = `${currentHeight}px`;
-    overlay.style.borderRadius = targetBorderRadius;
-
-    animationFrame = requestAnimationFrame(updateOverlayPosition);
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    // Don't track mouse if element is locked after click
-    if (isLocked) return;
-
-    const element = document.elementFromPoint(e.clientX, e.clientY);
-    if (!element || element === overlay) return;
-
-    currentElement = element;
+    hoveredElement = element;
     const rect = element.getBoundingClientRect();
     const computedStyle = window.getComputedStyle(element);
+    const borderRadius = computedStyle.borderRadius || "0px";
+    const transform = computedStyle.transform || "none";
 
-    targetX = rect.left;
-    targetY = rect.top;
-    targetWidth = rect.width;
-    targetHeight = rect.height;
-    targetBorderRadius = computedStyle.borderRadius;
-  };
+    selectionOverlay.update({
+      borderRadius,
+      height: rect.height,
+      transform,
+      width: rect.width,
+      x: rect.left,
+      y: rect.top,
+    });
 
-  const handleClick = (e: MouseEvent) => {
-    if (!isActive) return;
+    if (!selectionOverlay.isVisible()) {
+      selectionOverlay.show();
+    }
+  }, 10);
 
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
+  const cleanupRenderSubscription = libStore.subscribe((state) => {
+    scheduleRunWhenIdle(() => {
+      handleRender(state);
+    });
+  });
 
-    // Lock the element selection, stop tracking mouse
-    isLocked = true;
+  let timeout: null | number = null;
 
-    const elementToInspect = currentElement;
-
-    if (elementToInspect) {
-      void getStack(elementToInspect).then((stack) => {
-        if (!stack) {
-          hideOverlay();
-          return;
-        }
-        const serializedStack = serializeStack(filterStack(stack));
-        const htmlSnippet = getHTMLSnippet(elementToInspect);
-        const payload = `## Referenced element
-${htmlSnippet}
-
-Import traces:
-${serializedStack}
-
-Page: ${window.location.href}`;
-        void copyToClipboard(payload);
+  const render = () => {
+    timeout = window.setTimeout(() => {
+      scheduleRunWhenIdle(() => {
+        handleRender(libStore.getState());
+        render();
       });
-    }
+    }, 100);
   };
 
-  const handleMouseDown = (e: MouseEvent) => {
-    if (!isActive) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-  };
-
-  const showOverlay = () => {
-    if (!overlay) {
-      overlay = createOverlay();
-    }
-    isActive = true;
-    overlay.style.display = "block";
-
-    // Initialize lerp values
-    currentX = targetX;
-    currentY = targetY;
-    currentWidth = targetWidth;
-    currentHeight = targetHeight;
-
-    updateOverlayPosition();
-  };
-
-  const hideOverlay = () => {
-    isActive = false;
-    isLocked = false;
-    if (overlay) {
-      overlay.style.display = "none";
-    }
-    if (animationFrame) {
-      cancelAnimationFrame(animationFrame);
-      animationFrame = null;
-    }
-    currentElement = null;
-  };
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    // Only trigger on Meta key itself, not other keys while Meta is held
-    // Also prevent repeated keydown events from triggering multiple timers
-    if ((e.key === "Meta" || e.code === "MetaLeft" || e.code === "MetaRight") && !metaKeyTimer && !isActive) {
-      metaKeyTimer = setTimeout(() => {
-        if (!isInsideInputOrTextarea()) {
-          showOverlay();
-        }
-        metaKeyTimer = null;
-      }, 750);
-    } else if (metaKeyTimer && e.key !== "Meta" && e.code !== "MetaLeft" && e.code !== "MetaRight") {
-      // Cancel timer if any other key is pressed while waiting (e.g., Cmd+Tab, Cmd+1)
-      clearTimeout(metaKeyTimer);
-      metaKeyTimer = null;
-    }
-  };
-
-  const handleKeyUp = (e: KeyboardEvent) => {
-    // Only respond when the Meta key itself is released
-    if (e.key === "Meta" || e.code === "MetaLeft" || e.code === "MetaRight") {
-      if (metaKeyTimer) {
-        clearTimeout(metaKeyTimer);
-        metaKeyTimer = null;
-      }
-      // Only hide if not locked (waiting for copy to complete)
-      if (isActive && !isLocked) {
-        hideOverlay();
-      }
-    }
-  };
-
-  document.addEventListener("keydown", handleKeyDown);
-  document.addEventListener("keyup", handleKeyUp);
-  document.addEventListener("mousemove", handleMouseMove);
-  document.addEventListener("mousedown", handleMouseDown, true);
-  document.addEventListener("click", handleClick, true);
-  window.addEventListener("focus", handleWindowFocus);
+  render();
 
   return () => {
-    if (metaKeyTimer) {
-      clearTimeout(metaKeyTimer);
+    window.removeEventListener("mousemove", handleMouseMove);
+    window.removeEventListener("mousedown", handleMouseDown);
+    cleanupTrackHotkeys();
+    cleanupRenderSubscription();
+    cleanupKeyStateChangeSubscription();
+    if (timeout) {
+      window.clearTimeout(timeout);
     }
-    if (animationFrame) {
-      cancelAnimationFrame(animationFrame);
+    if (cleanupActivationHotkeyWatcher) {
+      cleanupActivationHotkeyWatcher();
     }
-    if (overlay && overlay.parentNode) {
-      overlay.parentNode.removeChild(overlay);
-    }
-    document.removeEventListener("keydown", handleKeyDown);
-    document.removeEventListener("keyup", handleKeyUp);
-    document.removeEventListener("mousemove", handleMouseMove);
-    document.removeEventListener("mousedown", handleMouseDown, true);
-    document.removeEventListener("click", handleClick, true);
-    window.removeEventListener("focus", handleWindowFocus);
   };
 };
 
-init();
+if (typeof window !== "undefined" && typeof document !== "undefined") {
+  const currentScript = document.currentScript;
+  let options: Options = {};
+  if (currentScript) {
+    const maybeOptions = currentScript.getAttribute("data-options");
+    if (maybeOptions) {
+      try {
+        options = JSON.parse(maybeOptions) as Options;
+      } catch {}
+    }
+  }
+  init(options);
+}

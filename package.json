@@ -1,6 +1,6 @@
 {
   "name": "react-grab",
-  "version": "0.0.7",
+  "version": "0.0.11",
   "description": "",
   "keywords": [],
   "homepage": "https://github.com/aidenybai/react-grab#readme",
@@ -46,19 +46,16 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "NODE_ENV=production tsup",
-    "dev": "NODE_ENV=development tsup --watch",
+    "build": "tsup",
+    "dev": "tsup --watch --ignore-watch dist",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write .",
     "check": "eslint src/**/*.ts && prettier --check .",
     "publint": "publint",
-    "test": "vitest --dom",
-    "coverage": "vitest run --coverage --dom",
     "prepublishOnly": "pnpm build"
   },
   "devDependencies": {
-    "@vitest/coverage-istanbul": "2.1.8",
     "eslint": "^9.37.0",
     "eslint-plugin-perfectionist": "^4.15.1",
     "publint": "^0.2.12",
@@ -70,6 +67,6 @@
     "access": "public"
   },
   "dependencies": {
-    "bippy": "^0.3.29"
+    "bippy": "^0.3.31"
   }
 }

@@ -1,0 +1,244 @@
+interface Selection {
+  borderRadius: string;
+  height: number;
+  transform: string;
+  width: number;
+  x: number;
+  y: number;
+}
+
+const VIEWPORT_MARGIN_PX = 8;
+const LABEL_OFFSET_PX = 6;
+
+const lerp = (start: number, end: number, factor: number) => {
+  return start + (end - start) * factor;
+};
+
+const SELECTION_LERP_FACTOR = 0.95;
+
+const createSelectionElement = ({
+  borderRadius,
+  height,
+  transform,
+  width,
+  x,
+  y,
+}: Selection): HTMLDivElement => {
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.top = `${y}px`;
+  overlay.style.left = `${x}px`;
+  overlay.style.width = `${width}px`;
+  overlay.style.height = `${height}px`;
+  overlay.style.borderRadius = borderRadius;
+  overlay.style.transform = transform;
+  overlay.style.pointerEvents = "none";
+  overlay.style.border = "1px solid rgb(210, 57, 192)";
+  overlay.style.backgroundColor = "rgba(210, 57, 192, 0.2)";
+  overlay.style.zIndex = "2147483646";
+  overlay.style.boxSizing = "border-box";
+  overlay.style.display = "none";
+
+  return overlay;
+};
+
+const updateSelectionElement = (
+  element: HTMLElement,
+  { borderRadius, height, transform, width, x, y }: Selection
+) => {
+  const currentTop = parseFloat(element.style.top) || 0;
+  const currentLeft = parseFloat(element.style.left) || 0;
+  const currentWidth = parseFloat(element.style.width) || 0;
+  const currentHeight = parseFloat(element.style.height) || 0;
+
+  const topValue = `${lerp(currentTop, y, SELECTION_LERP_FACTOR)}px`;
+  const leftValue = `${lerp(currentLeft, x, SELECTION_LERP_FACTOR)}px`;
+  const widthValue = `${lerp(currentWidth, width, SELECTION_LERP_FACTOR)}px`;
+  const heightValue = `${lerp(currentHeight, height, SELECTION_LERP_FACTOR)}px`;
+
+  if (element.style.top !== topValue) {
+    element.style.top = topValue;
+  }
+  if (element.style.left !== leftValue) {
+    element.style.left = leftValue;
+  }
+  if (element.style.width !== widthValue) {
+    element.style.width = widthValue;
+  }
+  if (element.style.height !== heightValue) {
+    element.style.height = heightValue;
+  }
+  if (element.style.borderRadius !== borderRadius) {
+    element.style.borderRadius = borderRadius;
+  }
+  if (element.style.transform !== transform) {
+    element.style.transform = transform;
+  }
+};
+
+export const createSelectionOverlay = (root: HTMLElement) => {
+  const element = createSelectionElement({
+    borderRadius: "0px",
+    height: 0,
+    transform: "none",
+    width: 0,
+    x: -1000,
+    y: -1000,
+  });
+  root.appendChild(element);
+
+  let visible = false;
+
+  return {
+    hide: () => {
+      visible = false;
+      element.style.display = "none";
+      element.style.pointerEvents = "none";
+    },
+
+    isVisible: () => visible,
+
+    show: () => {
+      visible = true;
+      element.style.display = "block";
+      element.style.pointerEvents = "auto";
+    },
+
+    update: (selection: Selection) => {
+      updateSelectionElement(element, selection);
+    },
+  };
+};
+
+const createSpinner = (): HTMLSpanElement => {
+  const spinner = document.createElement("span");
+  spinner.style.display = "inline-block";
+  spinner.style.width = "8px";
+  spinner.style.height = "8px";
+  spinner.style.border = "1.5px solid rgb(210, 57, 192)";
+  spinner.style.borderTopColor = "transparent";
+  spinner.style.borderRadius = "50%";
+  spinner.style.marginRight = "4px";
+  spinner.style.verticalAlign = "middle";
+
+  spinner.animate(
+    [{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }],
+    {
+      duration: 600,
+      easing: "linear",
+      iterations: Infinity,
+    }
+  );
+
+  return spinner;
+};
+
+let activeIndicator: HTMLDivElement | null = null;
+
+const createIndicator = (): HTMLDivElement => {
+  const indicator = document.createElement("div");
+  indicator.style.position = "fixed";
+  indicator.style.top = "calc(8px + env(safe-area-inset-top))";
+  indicator.style.padding = "2px 6px";
+  indicator.style.backgroundColor = "#fde7f7";
+  indicator.style.color = "#b21c8e";
+  indicator.style.border = "1px solid #f7c5ec";
+  indicator.style.borderRadius = "4px";
+  indicator.style.fontSize = "11px";
+  indicator.style.fontWeight = "500";
+  indicator.style.fontFamily =
+    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+  indicator.style.zIndex = "2147483647";
+  indicator.style.pointerEvents = "none";
+  indicator.style.opacity = "0";
+  indicator.style.transition = "opacity 0.2s ease-in-out";
+  indicator.style.display = "flex";
+  indicator.style.alignItems = "center";
+  indicator.style.maxWidth =
+    "calc(100vw - (16px + env(safe-area-inset-left) + env(safe-area-inset-right)))";
+  indicator.style.overflow = "hidden";
+  indicator.style.textOverflow = "ellipsis";
+  indicator.style.whiteSpace = "nowrap";
+
+  return indicator;
+};
+
+export const showCopyIndicator = (
+  selectionLeftPx: number,
+  selectionTopPx: number
+) => {
+  if (activeIndicator) {
+    activeIndicator.remove();
+    activeIndicator = null;
+  }
+
+  const indicator = createIndicator();
+  const loadingSpinner = createSpinner();
+  const labelText = document.createElement("span");
+  labelText.textContent = "Grabbing…";
+
+  indicator.appendChild(loadingSpinner);
+  indicator.appendChild(labelText);
+  document.body.appendChild(indicator);
+  activeIndicator = indicator;
+
+  const indicatorRect = indicator.getBoundingClientRect();
+  const viewportWidthPx = window.innerWidth;
+  const viewportHeightPx = window.innerHeight;
+
+  let indicatorLeftPx = Math.round(selectionLeftPx);
+  let indicatorTopPx =
+    Math.round(selectionTopPx) - indicatorRect.height - LABEL_OFFSET_PX;
+
+  indicatorLeftPx = Math.max(
+    VIEWPORT_MARGIN_PX,
+    Math.min(
+      indicatorLeftPx,
+      viewportWidthPx - indicatorRect.width - VIEWPORT_MARGIN_PX
+    )
+  );
+  indicatorTopPx = Math.max(
+    VIEWPORT_MARGIN_PX,
+    Math.min(
+      indicatorTopPx,
+      viewportHeightPx - indicatorRect.height - VIEWPORT_MARGIN_PX
+    )
+  );
+
+  indicator.style.left = `${indicatorLeftPx}px`;
+  indicator.style.top = `${indicatorTopPx}px`;
+  indicator.style.right = "auto";
+
+  requestAnimationFrame(() => {
+    indicator.style.opacity = "1";
+  });
+
+  return (tagName?: string) => {
+    loadingSpinner.remove();
+    const checkmarkIcon = document.createElement("span");
+    checkmarkIcon.textContent = "✓";
+    checkmarkIcon.style.display = "inline-block";
+    checkmarkIcon.style.marginRight = "4px";
+    checkmarkIcon.style.fontWeight = "600";
+    indicator.insertBefore(checkmarkIcon, labelText);
+    const tagNameMonospace = document.createElement("span");
+    tagNameMonospace.textContent = tagName ? `<${tagName}>` : "<element>";
+    tagNameMonospace.style.fontFamily =
+      "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
+    tagNameMonospace.style.fontVariantNumeric = "tabular-nums";
+    labelText.replaceChildren(
+      document.createTextNode("Grabbed "),
+      tagNameMonospace
+    );
+
+    setTimeout(() => {
+      indicator.style.opacity = "0";
+      setTimeout(() => {
+        indicator.remove();
+        if (activeIndicator === indicator) {
+          activeIndicator = null;
+        }
+      }, 200);
+    }, 1500);
+  };
+};
