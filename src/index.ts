@@ -233,10 +233,12 @@ export const init = (options: Options = {}) => {
       if (stack) {
         const filteredStack = filterStack(stack);
         const serializedStack = serializeStack(filteredStack);
-        text = `${serializedStack}\n\n${htmlSnippet}`;
+        text = `${htmlSnippet}\n\nComponent owner stack:\n${serializedStack}`;
       }
 
-      await copyTextToClipboard(`\n${text}`);
+      await copyTextToClipboard(
+        `\n\n<referenced_element>\n${text}\n</referenced_element>`
+      );
       const tagName = (element.tagName || "").toLowerCase();
       cleanupIndicator(tagName);
     } catch {
