@@ -13,6 +13,7 @@ export default tseslint.config(
       "*.js",
       "*.json",
       "*.md",
+      "kitchen-sink/**",
     ],
   },
   ...tseslint.configs.recommended,

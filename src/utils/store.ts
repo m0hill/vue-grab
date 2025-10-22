@@ -53,7 +53,6 @@ export const createStore = <T>(initializer: Initializer<T>) => {
       ...resolvedState,
     };
 
-    // Update state BEFORE notifying subscribers so getState() is consistent in listeners
     currentState = nextState;
 
     for (const entry of subscriberMap.values()) {

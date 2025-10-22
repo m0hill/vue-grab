@@ -4,14 +4,20 @@ import {
   trackHotkeys,
   watchKeyHeldFor,
 } from "./hotkeys.js";
-import { createSelectionOverlay, showCopyIndicator } from "./overlay.js";
-import { copyTextToClipboard } from "./utils/copy-text.js";
 import {
   filterStack,
   getHTMLSnippet,
   getStack,
   serializeStack,
-} from "./utils/data.js";
+} from "./instrumentation.js";
+import {
+  createSelectionOverlay,
+  hideLabel,
+  INDICATOR_TOTAL_HIDE_DELAY_MS,
+  showLabel,
+  updateLabelToProcessing,
+} from "./overlay.js";
+import { copyTextToClipboard } from "./utils/copy-text.js";
 import { isElementVisible } from "./utils/is-element-visible.js";
 import { ATTRIBUTE_NAME, mountRoot } from "./utils/mount-root.js";
 import { scheduleRunWhenIdle } from "./utils/schedule-run-when-idle.js";
@@ -23,7 +29,7 @@ export interface Options {
   /**
    * hotkey to trigger the overlay
    *
-   * default: "Meta"
+   * default: ["Meta", "C"]
    */
   hotkey?: Hotkey | Hotkey[];
 
@@ -60,7 +66,7 @@ export const init = (options: Options = {}) => {
 
   const resolvedOptions: Required<Options> = {
     enabled: true,
-    hotkey: "Meta",
+    hotkey: ["Meta", "C"],
     keyHoldDuration: 500,
     ...options,
   };
@@ -80,10 +86,6 @@ export const init = (options: Options = {}) => {
       return true;
     }
     return isKeyPressed(resolvedOptions.hotkey);
-  };
-
-  const isCopyHotkeyPressed = () => {
-    return isKeyPressed("Meta") && isKeyPressed("C");
   };
 
   let cleanupActivationHotkeyWatcher: (() => void) | null = null;
@@ -126,14 +128,6 @@ export const init = (options: Options = {}) => {
         cleanupActivationHotkeyWatcher();
         cleanupActivationHotkeyWatcher = null;
       }
-      return;
-    }
-
-    if (isCopyHotkeyPressed() && overlayMode === "visible") {
-      libStore.setState((state) => ({
-        ...state,
-        overlayMode: "copying",
-      }));
       return;
     }
 
@@ -228,8 +222,7 @@ export const init = (options: Options = {}) => {
   };
 
   const handleCopy = async (element: Element) => {
-    const rect = element.getBoundingClientRect();
-    const cleanupCopyIndicator = showCopyIndicator(rect.left, rect.top);
+    const cleanupIndicator = updateLabelToProcessing();
 
     try {
       const stack = await getStack(element);
@@ -245,9 +238,9 @@ export const init = (options: Options = {}) => {
 
       await copyTextToClipboard(`\n${text}`);
       const tagName = (element.tagName || "").toLowerCase();
-      cleanupCopyIndicator(tagName);
+      cleanupIndicator(tagName);
     } catch {
-      cleanupCopyIndicator();
+      cleanupIndicator();
     }
   };
 
@@ -257,6 +250,9 @@ export const init = (options: Options = {}) => {
     if (overlayMode === "hidden") {
       if (selectionOverlay.isVisible()) {
         selectionOverlay.hide();
+        if (!isCopying) {
+          hideLabel();
+        }
         hoveredElement = null;
       }
       return;
@@ -284,7 +280,10 @@ export const init = (options: Options = {}) => {
             ...state,
             overlayMode: "hidden",
           }));
-          isCopying = false;
+          selectionOverlay.hide();
+          window.setTimeout(() => {
+            isCopying = false;
+          }, INDICATOR_TOTAL_HIDE_DELAY_MS);
         });
       }
       return;
@@ -295,11 +294,15 @@ export const init = (options: Options = {}) => {
     if (!element) {
       if (selectionOverlay.isVisible()) {
         selectionOverlay.hide();
+        if (!isCopying) {
+          hideLabel();
+        }
       }
       hoveredElement = null;
       return;
     }
 
+    const tagName = (element.tagName || "").toLowerCase();
     hoveredElement = element;
     const rect = element.getBoundingClientRect();
     const computedStyle = window.getComputedStyle(element);
@@ -318,6 +321,8 @@ export const init = (options: Options = {}) => {
     if (!selectionOverlay.isVisible()) {
       selectionOverlay.show();
     }
+
+    showLabel(rect.left, rect.top, tagName);
   }, 10);
 
   const cleanupRenderSubscription = libStore.subscribe((state) => {

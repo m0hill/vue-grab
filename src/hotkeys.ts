@@ -195,10 +195,14 @@ export const watchKeyHeldFor = (
     }
   };
 
-  const checkSingleKeyPressed = (keyToCheck: Hotkey, pressedKeys: Set<string>) => {
+  const checkSingleKeyPressed = (
+    keyToCheck: Hotkey,
+    pressedKeys: Set<string>
+  ) => {
     if (keyToCheck.length === 1) {
       return (
-        pressedKeys.has(keyToCheck.toLowerCase()) || pressedKeys.has(keyToCheck.toUpperCase())
+        pressedKeys.has(keyToCheck.toLowerCase()) ||
+        pressedKeys.has(keyToCheck.toUpperCase())
       );
     }
     return pressedKeys.has(keyToCheck);
@@ -206,14 +210,22 @@ export const watchKeyHeldFor = (
 
   const checkAllKeysPressed = (pressedKeys: Set<string>) => {
     if (Array.isArray(key)) {
-      return key.every((keyFromCombo) => checkSingleKeyPressed(keyFromCombo, pressedKeys));
+      return key.every((keyFromCombo) =>
+        checkSingleKeyPressed(keyFromCombo, pressedKeys)
+      );
     }
     return checkSingleKeyPressed(key, pressedKeys);
   };
 
-  const getKeyFromTimestamps = (keyToFind: Hotkey, timestamps: Map<string, number>) => {
+  const getKeyFromTimestamps = (
+    keyToFind: Hotkey,
+    timestamps: Map<string, number>
+  ) => {
     if (keyToFind.length === 1) {
-      return timestamps.get(keyToFind.toLowerCase()) || timestamps.get(keyToFind.toUpperCase());
+      return (
+        timestamps.get(keyToFind.toLowerCase()) ||
+        timestamps.get(keyToFind.toUpperCase())
+      );
     }
     return timestamps.get(keyToFind);
   };
@@ -225,7 +237,7 @@ export const watchKeyHeldFor = (
     for (const keyFromCombo of keysToInspect) {
       const timestamp = getKeyFromTimestamps(keyFromCombo, timestamps);
       if (timestamp === undefined) {
-        return undefined; // Not all keys are pressed
+        return undefined;
       }
       if (earliest === undefined || timestamp < earliest) {
         earliest = timestamp;

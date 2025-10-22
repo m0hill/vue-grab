@@ -9,6 +9,11 @@ interface Selection {
 
 const VIEWPORT_MARGIN_PX = 8;
 const LABEL_OFFSET_PX = 6;
+export const INDICATOR_CLAMP_PADDING_PX = 4;
+export const INDICATOR_SUCCESS_VISIBLE_MS = 1500;
+export const INDICATOR_FADE_MS = 200;
+export const INDICATOR_TOTAL_HIDE_DELAY_MS =
+  INDICATOR_SUCCESS_VISIBLE_MS + INDICATOR_FADE_MS;
 
 const lerp = (start: number, end: number, factor: number) => {
   return start + (end - start) * factor;
@@ -163,24 +168,42 @@ const createIndicator = (): HTMLDivElement => {
   return indicator;
 };
 
-export const showCopyIndicator = (
+export const showLabel = (
   selectionLeftPx: number,
-  selectionTopPx: number
+  selectionTopPx: number,
+  tagName: string
 ) => {
-  if (activeIndicator) {
-    activeIndicator.remove();
-    activeIndicator = null;
+  let indicator = activeIndicator;
+  let isNewIndicator = false;
+
+  if (!indicator) {
+    indicator = createIndicator();
+    document.body.appendChild(indicator);
+    activeIndicator = indicator;
+    isNewIndicator = true;
+    isProcessing = false;
   }
 
-  const indicator = createIndicator();
-  const loadingSpinner = createSpinner();
-  const labelText = document.createElement("span");
-  labelText.textContent = "Grabbing…";
-
-  indicator.appendChild(loadingSpinner);
-  indicator.appendChild(labelText);
-  document.body.appendChild(indicator);
-  activeIndicator = indicator;
+  if (!isProcessing) {
+    const labelText = indicator.querySelector("span");
+    if (labelText) {
+      const tagNameMonospace = document.createElement("span");
+      tagNameMonospace.textContent = tagName ? `<${tagName}>` : "<element>";
+      tagNameMonospace.style.fontFamily =
+        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
+      tagNameMonospace.style.fontVariantNumeric = "tabular-nums";
+      labelText.replaceChildren(tagNameMonospace);
+    } else {
+      const newLabelText = document.createElement("span");
+      const tagNameMonospace = document.createElement("span");
+      tagNameMonospace.textContent = tagName ? `<${tagName}>` : "<element>";
+      tagNameMonospace.style.fontFamily =
+        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
+      tagNameMonospace.style.fontVariantNumeric = "tabular-nums";
+      newLabelText.appendChild(tagNameMonospace);
+      indicator.appendChild(newLabelText);
+    }
+  }
 
   const indicatorRect = indicator.getBoundingClientRect();
   const viewportWidthPx = window.innerWidth;
@@ -190,46 +213,79 @@ export const showCopyIndicator = (
   let indicatorTopPx =
     Math.round(selectionTopPx) - indicatorRect.height - LABEL_OFFSET_PX;
 
-  indicatorLeftPx = Math.max(
-    VIEWPORT_MARGIN_PX,
-    Math.min(
-      indicatorLeftPx,
-      viewportWidthPx - indicatorRect.width - VIEWPORT_MARGIN_PX
-    )
-  );
-  indicatorTopPx = Math.max(
-    VIEWPORT_MARGIN_PX,
-    Math.min(
-      indicatorTopPx,
-      viewportHeightPx - indicatorRect.height - VIEWPORT_MARGIN_PX
-    )
-  );
+  const CLAMPED_PADDING = INDICATOR_CLAMP_PADDING_PX;
+  const minLeft = VIEWPORT_MARGIN_PX;
+  const minTop = VIEWPORT_MARGIN_PX;
+  const maxLeft = viewportWidthPx - indicatorRect.width - VIEWPORT_MARGIN_PX;
+  const maxTop = viewportHeightPx - indicatorRect.height - VIEWPORT_MARGIN_PX;
+
+  const willClampLeft = indicatorLeftPx < minLeft;
+  const willClampTop = indicatorTopPx < minTop;
+  const isClamped = willClampLeft || willClampTop;
+
+  indicatorLeftPx = Math.max(minLeft, Math.min(indicatorLeftPx, maxLeft));
+  indicatorTopPx = Math.max(minTop, Math.min(indicatorTopPx, maxTop));
+
+  if (isClamped) {
+    indicatorLeftPx += CLAMPED_PADDING;
+    indicatorTopPx += CLAMPED_PADDING;
+  }
 
   indicator.style.left = `${indicatorLeftPx}px`;
   indicator.style.top = `${indicatorTopPx}px`;
   indicator.style.right = "auto";
 
-  requestAnimationFrame(() => {
+  if (isNewIndicator) {
+    requestAnimationFrame(() => {
+      indicator.style.opacity = "1";
+    });
+  } else if (indicator.style.opacity !== "1") {
     indicator.style.opacity = "1";
-  });
+  }
+};
+
+let isProcessing = false;
+
+export const updateLabelToProcessing = () => {
+  if (!activeIndicator || isProcessing) return () => {};
+
+  isProcessing = true;
+  const indicator = activeIndicator;
+
+  indicator.innerHTML = "";
+
+  const loadingSpinner = createSpinner();
+  const labelText = document.createElement("span");
+  labelText.textContent = "Grabbing…";
+
+  indicator.appendChild(loadingSpinner);
+  indicator.appendChild(labelText);
 
   return (tagName?: string) => {
-    loadingSpinner.remove();
+    if (!activeIndicator) {
+      isProcessing = false;
+      return;
+    }
+
+    indicator.textContent = "";
+
     const checkmarkIcon = document.createElement("span");
     checkmarkIcon.textContent = "✓";
     checkmarkIcon.style.display = "inline-block";
     checkmarkIcon.style.marginRight = "4px";
     checkmarkIcon.style.fontWeight = "600";
-    indicator.insertBefore(checkmarkIcon, labelText);
+
+    const newLabelText = document.createElement("span");
     const tagNameMonospace = document.createElement("span");
     tagNameMonospace.textContent = tagName ? `<${tagName}>` : "<element>";
     tagNameMonospace.style.fontFamily =
       "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
     tagNameMonospace.style.fontVariantNumeric = "tabular-nums";
-    labelText.replaceChildren(
-      document.createTextNode("Grabbed "),
-      tagNameMonospace
-    );
+    newLabelText.appendChild(document.createTextNode("Grabbed "));
+    newLabelText.appendChild(tagNameMonospace);
+
+    indicator.appendChild(checkmarkIcon);
+    indicator.appendChild(newLabelText);
 
     setTimeout(() => {
       indicator.style.opacity = "0";
@@ -238,7 +294,16 @@ export const showCopyIndicator = (
         if (activeIndicator === indicator) {
           activeIndicator = null;
         }
-      }, 200);
-    }, 1500);
+        isProcessing = false;
+      }, INDICATOR_FADE_MS);
+    }, INDICATOR_SUCCESS_VISIBLE_MS);
   };
+};
+
+export const hideLabel = () => {
+  if (activeIndicator) {
+    activeIndicator.remove();
+    activeIndicator = null;
+  }
+  isProcessing = false;
 };

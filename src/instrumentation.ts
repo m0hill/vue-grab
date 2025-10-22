@@ -219,7 +219,7 @@ export const getHTMLSnippet = (element: Element) => {
   const getTextContent = (el: Element) => {
     let text = el.textContent || "";
     text = text.trim().replace(/\s+/g, " ");
-    const maxLength = 60; // Reduced from 100
+    const maxLength = 60;
     if (text.length > maxLength) {
       text = text.substring(0, maxLength) + "...";
     }
