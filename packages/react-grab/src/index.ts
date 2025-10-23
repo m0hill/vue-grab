@@ -11,18 +11,19 @@ import {
   serializeStack,
 } from "./instrumentation.js";
 import {
+  cleanupGrabbedIndicators,
+  createGrabbedOverlay,
   createSelectionOverlay,
   hideLabel,
-  INDICATOR_TOTAL_HIDE_DELAY_MS,
+  hideProgressIndicator,
   showLabel,
+  showProgressIndicator,
   updateLabelToProcessing,
 } from "./overlay.js";
 import { copyTextToClipboard } from "./utils/copy-text.js";
 import { isElementVisible } from "./utils/is-element-visible.js";
 import { ATTRIBUTE_NAME, mountRoot } from "./utils/mount-root.js";
-import { scheduleRunWhenIdle } from "./utils/schedule-run-when-idle.js";
 import { createStore } from "./utils/store.js";
-import { throttle } from "./utils/throttle.js";
 
 export interface Options {
   enabled?: boolean;
@@ -40,8 +41,6 @@ export interface Options {
    */
   keyHoldDuration?: number;
 }
-
-const THROTTLE_DELAY = 16;
 
 interface LibStore {
   keyPressTimestamps: Map<Hotkey, number>;
@@ -74,7 +73,10 @@ export const init = (options: Options = {}) => {
   const root = mountRoot();
   const selectionOverlay = createSelectionOverlay(root);
   let hoveredElement: Element | null = null;
+  let lastGrabbedElement: Element | null = null;
   let isCopying = false;
+  let progressAnimationFrame: null | number = null;
+  let progressStartTime: null | number = null;
 
   const checkIsActivationHotkeyPressed = () => {
     if (Array.isArray(resolvedOptions.hotkey)) {
@@ -86,6 +88,37 @@ export const init = (options: Options = {}) => {
       return true;
     }
     return isKeyPressed(resolvedOptions.hotkey);
+  };
+
+  const updateProgressIndicator = () => {
+    if (progressStartTime === null) return;
+
+    const elapsed = Date.now() - progressStartTime;
+    const progress = Math.min(1, elapsed / resolvedOptions.keyHoldDuration);
+    const { mouseX, mouseY } = libStore.getState();
+    showProgressIndicator(root, progress, mouseX, mouseY);
+
+    if (progress < 1) {
+      progressAnimationFrame = requestAnimationFrame(updateProgressIndicator);
+    }
+  };
+
+  const startProgressTracking = () => {
+    if (progressAnimationFrame !== null) return;
+
+    progressStartTime = Date.now();
+    const { mouseX, mouseY } = libStore.getState();
+    showProgressIndicator(root, 0, mouseX, mouseY);
+    progressAnimationFrame = requestAnimationFrame(updateProgressIndicator);
+  };
+
+  const stopProgressTracking = () => {
+    if (progressAnimationFrame !== null) {
+      cancelAnimationFrame(progressAnimationFrame);
+      progressAnimationFrame = null;
+    }
+    progressStartTime = null;
+    hideProgressIndicator();
   };
 
   let cleanupActivationHotkeyWatcher: (() => void) | null = null;
@@ -128,6 +161,7 @@ export const init = (options: Options = {}) => {
         cleanupActivationHotkeyWatcher();
         cleanupActivationHotkeyWatcher = null;
       }
+      stopProgressTracking();
       return;
     }
 
@@ -146,10 +180,12 @@ export const init = (options: Options = {}) => {
         }));
       }
 
+      stopProgressTracking();
       return;
     }
 
     if (overlayMode === "hidden" && !cleanupActivationHotkeyWatcher) {
+      startProgressTracking();
       cleanupActivationHotkeyWatcher = watchKeyHeldFor(
         resolvedOptions.hotkey,
         resolvedOptions.keyHoldDuration,
@@ -158,6 +194,7 @@ export const init = (options: Options = {}) => {
             ...state,
             overlayMode: "visible",
           }));
+          stopProgressTracking();
           cleanupActivationHotkeyWatcher = null;
         }
       );
@@ -169,13 +206,26 @@ export const init = (options: Options = {}) => {
     (state) => state.pressedKeys
   );
 
-  const handleMouseMove = throttle((event: MouseEvent) => {
-    libStore.setState((state) => ({
-      ...state,
-      mouseX: event.clientX,
-      mouseY: event.clientY,
-    }));
-  }, THROTTLE_DELAY);
+  let mouseMoveScheduled = false;
+  let pendingMouseX = -1000;
+  let pendingMouseY = -1000;
+
+  const handleMouseMove = (event: MouseEvent) => {
+    pendingMouseX = event.clientX;
+    pendingMouseY = event.clientY;
+
+    if (mouseMoveScheduled) return;
+    mouseMoveScheduled = true;
+
+    requestAnimationFrame(() => {
+      mouseMoveScheduled = false;
+      libStore.setState((state) => ({
+        ...state,
+        mouseX: pendingMouseX,
+        mouseY: pendingMouseY,
+      }));
+    });
+  };
 
   const handleMouseDown = (event: MouseEvent) => {
     if (event.button !== 0) {
@@ -198,8 +248,16 @@ export const init = (options: Options = {}) => {
     }));
   };
 
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      cleanupGrabbedIndicators();
+      hideLabel();
+    }
+  };
+
   window.addEventListener("mousemove", handleMouseMove);
   window.addEventListener("mousedown", handleMouseDown);
+  document.addEventListener("visibilitychange", handleVisibilityChange);
   const cleanupTrackHotkeys = trackHotkeys();
 
   const getElementAtPosition = (x: number, y: number): Element | null => {
@@ -222,71 +280,76 @@ export const init = (options: Options = {}) => {
   };
 
   const handleCopy = async (element: Element) => {
-    const cleanupIndicator = updateLabelToProcessing();
+    const tagName = (element.tagName || "").toLowerCase();
+    const rect = element.getBoundingClientRect();
+    const cleanupIndicator = updateLabelToProcessing(root, rect.left, rect.top);
 
     try {
-      const stack = await getStack(element);
       const htmlSnippet = getHTMLSnippet(element);
 
-      let text = htmlSnippet;
+      await copyTextToClipboard(
+        `\n\n<referenced_element>\n${htmlSnippet}\n</referenced_element>`
+      );
+
+      cleanupIndicator(tagName);
+
+      const stack = await getStack(element);
 
       if (stack) {
         const filteredStack = filterStack(stack);
         const serializedStack = serializeStack(filteredStack);
-        text = `${htmlSnippet}\n\nComponent owner stack:\n${serializedStack}`;
-      }
+        const fullText = `${htmlSnippet}\n\nComponent owner stack:\n${serializedStack}`;
 
-      await copyTextToClipboard(
-        `\n\n<referenced_element>\n${text}\n</referenced_element>`
-      );
-      const tagName = (element.tagName || "").toLowerCase();
-      cleanupIndicator(tagName);
+        await copyTextToClipboard(
+          `\n\n<referenced_element>\n${fullText}\n</referenced_element>`
+        ).catch(() => {
+        });
+      }
     } catch {
-      cleanupIndicator();
+      cleanupIndicator(tagName);
     }
   };
 
-  const handleRender = throttle((state: LibStore) => {
+  const handleRender = (state: LibStore) => {
     const { mouseX, mouseY, overlayMode } = state;
 
     if (overlayMode === "hidden") {
       if (selectionOverlay.isVisible()) {
         selectionOverlay.hide();
-        if (!isCopying) {
-          hideLabel();
-        }
-        hoveredElement = null;
       }
+      if (!isCopying) {
+        hideLabel();
+      }
+      hoveredElement = null;
+      lastGrabbedElement = null;
       return;
     }
 
     if (overlayMode === "copying" && hoveredElement) {
-      const computedStyle = window.getComputedStyle(hoveredElement);
-      const rect = hoveredElement.getBoundingClientRect();
-      selectionOverlay.update({
-        borderRadius: computedStyle.borderRadius || "0px",
-        height: rect.height,
-        transform: computedStyle.transform || "none",
-        width: rect.width,
-        x: rect.left,
-        y: rect.top,
-      });
-      if (!selectionOverlay.isVisible()) {
-        selectionOverlay.show();
-      }
-
       if (!isCopying) {
         isCopying = true;
-        void handleCopy(hoveredElement).finally(() => {
-          libStore.setState((state) => ({
-            ...state,
-            overlayMode: "hidden",
-          }));
-          selectionOverlay.hide();
-          window.setTimeout(() => {
-            isCopying = false;
-          }, INDICATOR_TOTAL_HIDE_DELAY_MS);
+        lastGrabbedElement = hoveredElement;
+        const computedStyle = window.getComputedStyle(hoveredElement);
+        const rect = hoveredElement.getBoundingClientRect();
+
+        createGrabbedOverlay(root, {
+          borderRadius: computedStyle.borderRadius || "0px",
+          height: rect.height,
+          transform: computedStyle.transform || "none",
+          width: rect.width,
+          x: rect.left,
+          y: rect.top,
         });
+
+        void handleCopy(hoveredElement).finally(() => {
+          isCopying = false;
+        });
+
+        const isStillPressed = checkIsActivationHotkeyPressed();
+        libStore.setState((state) => ({
+          ...state,
+          overlayMode: isStillPressed ? "visible" : "hidden",
+        }));
       }
       return;
     }
@@ -296,11 +359,26 @@ export const init = (options: Options = {}) => {
     if (!element) {
       if (selectionOverlay.isVisible()) {
         selectionOverlay.hide();
-        if (!isCopying) {
-          hideLabel();
-        }
+      }
+      if (!isCopying) {
+        hideLabel();
       }
       hoveredElement = null;
+      return;
+    }
+
+    if (lastGrabbedElement && element !== lastGrabbedElement) {
+      lastGrabbedElement = null;
+    }
+
+    if (element === lastGrabbedElement) {
+      if (selectionOverlay.isVisible()) {
+        selectionOverlay.hide();
+      }
+      if (!isCopying) {
+        hideLabel();
+      }
+      hoveredElement = element;
       return;
     }
 
@@ -324,40 +402,44 @@ export const init = (options: Options = {}) => {
       selectionOverlay.show();
     }
 
-    showLabel(rect.left, rect.top, tagName);
-  }, 10);
-
-  const cleanupRenderSubscription = libStore.subscribe((state) => {
-    scheduleRunWhenIdle(() => {
-      handleRender(state);
-    });
-  });
-
-  let timeout: null | number = null;
-
-  const render = () => {
-    timeout = window.setTimeout(() => {
-      scheduleRunWhenIdle(() => {
-        handleRender(libStore.getState());
-        render();
-      });
-    }, 100);
+    showLabel(root, rect.left, rect.top, tagName);
   };
 
-  render();
+  let renderScheduled = false;
+
+  const scheduleRender = () => {
+    if (renderScheduled) return;
+    renderScheduled = true;
+    requestAnimationFrame(() => {
+      renderScheduled = false;
+      handleRender(libStore.getState());
+    });
+  };
+
+  const cleanupRenderSubscription = libStore.subscribe(() => {
+    scheduleRender();
+  });
+
+  const continuousRender = () => {
+    scheduleRender();
+    requestAnimationFrame(continuousRender);
+  };
+
+  continuousRender();
 
   return () => {
     window.removeEventListener("mousemove", handleMouseMove);
     window.removeEventListener("mousedown", handleMouseDown);
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
     cleanupTrackHotkeys();
     cleanupRenderSubscription();
     cleanupKeyStateChangeSubscription();
-    if (timeout) {
-      window.clearTimeout(timeout);
-    }
     if (cleanupActivationHotkeyWatcher) {
       cleanupActivationHotkeyWatcher();
     }
+    stopProgressTracking();
+    cleanupGrabbedIndicators();
+    hideLabel();
   };
 };
 

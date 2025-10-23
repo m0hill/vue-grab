@@ -115,6 +115,35 @@ export const createSelectionOverlay = (root: HTMLElement) => {
   };
 };
 
+export const createGrabbedOverlay = (root: HTMLElement, selection: Selection) => {
+  const element = document.createElement("div");
+  element.style.position = "fixed";
+  element.style.top = `${selection.y}px`;
+  element.style.left = `${selection.x}px`;
+  element.style.width = `${selection.width}px`;
+  element.style.height = `${selection.height}px`;
+  element.style.borderRadius = selection.borderRadius;
+  element.style.transform = selection.transform;
+  element.style.pointerEvents = "none";
+  element.style.border = "1px solid rgb(210, 57, 192)";
+  element.style.backgroundColor = "rgba(210, 57, 192, 0.2)";
+  element.style.zIndex = "2147483646";
+  element.style.boxSizing = "border-box";
+  element.style.transition = "opacity 0.3s ease-out";
+  element.style.opacity = "1";
+
+  root.appendChild(element);
+
+  // Fade out and self-delete
+  requestAnimationFrame(() => {
+    element.style.opacity = "0";
+  });
+
+  setTimeout(() => {
+    element.remove();
+  }, 300);
+};
+
 const createSpinner = (): HTMLSpanElement => {
   const spinner = document.createElement("span");
   spinner.style.display = "inline-block";
@@ -169,6 +198,7 @@ const createIndicator = (): HTMLDivElement => {
 };
 
 export const showLabel = (
+  root: HTMLElement,
   selectionLeftPx: number,
   selectionTopPx: number,
   tagName: string
@@ -178,7 +208,7 @@ export const showLabel = (
 
   if (!indicator) {
     indicator = createIndicator();
-    document.body.appendChild(indicator);
+    root.appendChild(indicator);
     activeIndicator = indicator;
     isNewIndicator = true;
     isProcessing = false;
@@ -245,14 +275,53 @@ export const showLabel = (
 };
 
 let isProcessing = false;
+const activeGrabbedIndicators: Set<HTMLDivElement> = new Set();
 
-export const updateLabelToProcessing = () => {
-  if (!activeIndicator || isProcessing) return () => {};
+export const updateLabelToProcessing = (
+  root: HTMLElement,
+  selectionLeftPx?: number,
+  selectionTopPx?: number
+) => {
+  // Always create a new indicator for each grab operation
+  const indicator = createIndicator();
+  // Ensure grabbed indicator appears above selection label
+  indicator.style.zIndex = "2147483648";
+  root.appendChild(indicator);
+  activeGrabbedIndicators.add(indicator);
 
-  isProcessing = true;
-  const indicator = activeIndicator;
+  const positionIndicator = () => {
+    if (selectionLeftPx === undefined || selectionTopPx === undefined) return;
 
-  indicator.innerHTML = "";
+    const indicatorRect = indicator.getBoundingClientRect();
+    const viewportWidthPx = window.innerWidth;
+    const viewportHeightPx = window.innerHeight;
+
+    let indicatorLeftPx = Math.round(selectionLeftPx);
+    let indicatorTopPx =
+      Math.round(selectionTopPx) - indicatorRect.height - LABEL_OFFSET_PX;
+
+    const CLAMPED_PADDING = INDICATOR_CLAMP_PADDING_PX;
+    const minLeft = VIEWPORT_MARGIN_PX;
+    const minTop = VIEWPORT_MARGIN_PX;
+    const maxLeft = viewportWidthPx - indicatorRect.width - VIEWPORT_MARGIN_PX;
+    const maxTop = viewportHeightPx - indicatorRect.height - VIEWPORT_MARGIN_PX;
+
+    const willClampLeft = indicatorLeftPx < minLeft;
+    const willClampTop = indicatorTopPx < minTop;
+    const isClamped = willClampLeft || willClampTop;
+
+    indicatorLeftPx = Math.max(minLeft, Math.min(indicatorLeftPx, maxLeft));
+    indicatorTopPx = Math.max(minTop, Math.min(indicatorTopPx, maxTop));
+
+    if (isClamped) {
+      indicatorLeftPx += CLAMPED_PADDING;
+      indicatorTopPx += CLAMPED_PADDING;
+    }
+
+    indicator.style.left = `${indicatorLeftPx}px`;
+    indicator.style.top = `${indicatorTopPx}px`;
+    indicator.style.right = "auto";
+  };
 
   const loadingSpinner = createSpinner();
   const labelText = document.createElement("span");
@@ -261,12 +330,15 @@ export const updateLabelToProcessing = () => {
   indicator.appendChild(loadingSpinner);
   indicator.appendChild(labelText);
 
-  return (tagName?: string) => {
-    if (!activeIndicator) {
-      isProcessing = false;
-      return;
-    }
+  // Position after content is added
+  positionIndicator();
 
+  // Show the indicator
+  requestAnimationFrame(() => {
+    indicator.style.opacity = "1";
+  });
+
+  return (tagName?: string) => {
     indicator.textContent = "";
 
     const checkmarkIcon = document.createElement("span");
@@ -287,14 +359,16 @@ export const updateLabelToProcessing = () => {
     indicator.appendChild(checkmarkIcon);
     indicator.appendChild(newLabelText);
 
+    // Reposition after content changes to "Grabbed!"
+    requestAnimationFrame(() => {
+      positionIndicator();
+    });
+
     setTimeout(() => {
       indicator.style.opacity = "0";
       setTimeout(() => {
         indicator.remove();
-        if (activeIndicator === indicator) {
-          activeIndicator = null;
-        }
-        isProcessing = false;
+        activeGrabbedIndicators.delete(indicator);
       }, INDICATOR_FADE_MS);
     }, INDICATOR_SUCCESS_VISIBLE_MS);
   };
@@ -306,4 +380,114 @@ export const hideLabel = () => {
     activeIndicator = null;
   }
   isProcessing = false;
+};
+
+export const cleanupGrabbedIndicators = () => {
+  for (const indicator of activeGrabbedIndicators) {
+    indicator.remove();
+  }
+  activeGrabbedIndicators.clear();
+};
+
+let activeProgressIndicator: HTMLDivElement | null = null;
+
+const createProgressIndicatorElement = (): HTMLDivElement => {
+  const container = document.createElement("div");
+  container.style.position = "fixed";
+  container.style.zIndex = "2147483647";
+  container.style.pointerEvents = "none";
+  container.style.opacity = "0";
+  container.style.transition = "opacity 0.1s ease-in-out";
+
+  // Progress bar container
+  const progressBarContainer = document.createElement("div");
+  progressBarContainer.style.width = "32px";
+  progressBarContainer.style.height = "2px";
+  progressBarContainer.style.backgroundColor = "rgba(178, 28, 142, 0.2)";
+  progressBarContainer.style.borderRadius = "1px";
+  progressBarContainer.style.overflow = "hidden";
+  progressBarContainer.style.position = "relative";
+
+  // Progress bar fill
+  const progressBarFill = document.createElement("div");
+  progressBarFill.style.width = "0%";
+  progressBarFill.style.height = "100%";
+  progressBarFill.style.backgroundColor = "#b21c8e";
+  progressBarFill.style.borderRadius = "1px";
+  progressBarFill.style.transition = "width 0.05s linear";
+  progressBarFill.setAttribute("data-progress-fill", "true");
+
+  progressBarContainer.appendChild(progressBarFill);
+  container.appendChild(progressBarContainer);
+
+  return container;
+};
+
+export const showProgressIndicator = (
+  root: HTMLElement,
+  progress: number,
+  mouseX: number,
+  mouseY: number
+) => {
+  if (!activeProgressIndicator) {
+    activeProgressIndicator = createProgressIndicatorElement();
+    root.appendChild(activeProgressIndicator);
+    requestAnimationFrame(() => {
+      if (activeProgressIndicator) {
+        activeProgressIndicator.style.opacity = "1";
+      }
+    });
+  }
+
+  const indicator = activeProgressIndicator;
+  const indicatorRect = indicator.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  const CURSOR_OFFSET = 14;
+  const VIEWPORT_MARGIN = 8;
+
+  // Center horizontally around the cursor
+  let indicatorLeft = mouseX - indicatorRect.width / 2;
+
+  // Try positioning below the cursor first
+  let indicatorTop = mouseY + CURSOR_OFFSET;
+
+  // Check if there's enough space below, otherwise position above
+  if (indicatorTop + indicatorRect.height + VIEWPORT_MARGIN > viewportHeight) {
+    indicatorTop = mouseY - indicatorRect.height - CURSOR_OFFSET;
+  }
+
+  // Clamp to viewport bounds
+  indicatorTop = Math.max(
+    VIEWPORT_MARGIN,
+    Math.min(indicatorTop, viewportHeight - indicatorRect.height - VIEWPORT_MARGIN)
+  );
+  indicatorLeft = Math.max(
+    VIEWPORT_MARGIN,
+    Math.min(indicatorLeft, viewportWidth - indicatorRect.width - VIEWPORT_MARGIN)
+  );
+
+  indicator.style.top = `${indicatorTop}px`;
+  indicator.style.left = `${indicatorLeft}px`;
+
+  const progressFill = indicator.querySelector(
+    "[data-progress-fill]"
+  ) as HTMLDivElement;
+  if (progressFill) {
+    const percentage = Math.min(100, Math.max(0, progress * 100));
+    progressFill.style.width = `${percentage}%`;
+  }
+};
+
+export const hideProgressIndicator = () => {
+  if (activeProgressIndicator) {
+    activeProgressIndicator.style.opacity = "0";
+    setTimeout(() => {
+      if (activeProgressIndicator) {
+        activeProgressIndicator.remove();
+        activeProgressIndicator = null;
+      }
+    }, 100);
+  }
 };

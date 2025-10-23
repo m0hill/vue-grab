@@ -183,6 +183,7 @@ export const watchKeyHeldFor = (
 ): (() => void) => {
   let timeoutId: null | ReturnType<typeof setTimeout> = null;
   let unsubscribe: (() => void) | null = null;
+  const watchStartTime = Date.now();
 
   const cleanup = () => {
     if (timeoutId !== null) {
@@ -217,39 +218,9 @@ export const watchKeyHeldFor = (
     return checkSingleKeyPressed(key, pressedKeys);
   };
 
-  const getKeyFromTimestamps = (
-    keyToFind: Hotkey,
-    timestamps: Map<string, number>
-  ) => {
-    if (keyToFind.length === 1) {
-      return (
-        timestamps.get(keyToFind.toLowerCase()) ||
-        timestamps.get(keyToFind.toUpperCase())
-      );
-    }
-    return timestamps.get(keyToFind);
-  };
-
-  const getEarliestPressTime = (timestamps: Map<string, number>) => {
-    const keysToInspect = Array.isArray(key) ? key : [key];
-    let earliest: number | undefined;
-
-    for (const keyFromCombo of keysToInspect) {
-      const timestamp = getKeyFromTimestamps(keyFromCombo, timestamps);
-      if (timestamp === undefined) {
-        return undefined;
-      }
-      if (earliest === undefined || timestamp < earliest) {
-        earliest = timestamp;
-      }
-    }
-
-    return earliest;
-  };
-
   const scheduleCallback = () => {
     const state = libStore.getState();
-    const { keyPressTimestamps, pressedKeys } = state;
+    const { pressedKeys } = state;
 
     if (!checkAllKeysPressed(pressedKeys)) {
       if (timeoutId !== null) {
@@ -259,16 +230,7 @@ export const watchKeyHeldFor = (
       return;
     }
 
-    const earliestPressTime = getEarliestPressTime(keyPressTimestamps);
-    if (earliestPressTime === undefined) {
-      if (timeoutId !== null) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
-      }
-      return;
-    }
-
-    const elapsed = Date.now() - earliestPressTime;
+    const elapsed = Date.now() - watchStartTime;
     const remaining = duration - elapsed;
 
     if (remaining <= 0) {
