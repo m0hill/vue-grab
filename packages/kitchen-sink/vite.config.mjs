@@ -9,7 +9,7 @@ export default defineConfig({
       ? {}
       : {
           alias: {
-            ['react-grab']: path.resolve(__dirname, '../dist/index.global.js'),
+            ['react-grab']: path.resolve(__dirname, '../react-grab/dist/index.global.js'),
           },
         },
 });

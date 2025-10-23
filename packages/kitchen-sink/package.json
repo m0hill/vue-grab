@@ -1,4 +1,6 @@
 {
+  "name": "@react-grab/kitchen-sink",
+  "private": true,
   "type": "module",
   "scripts": {
     "preview": "vite preview",
@@ -7,7 +9,8 @@
   },
   "dependencies": {
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-grab": "workspace:*"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.3",
