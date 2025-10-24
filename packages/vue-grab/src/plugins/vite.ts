@@ -1,12 +1,14 @@
 export interface VueGrabPluginOptions {
   adapter?: "cursor";
   enabled?: boolean;
+  scriptSrc?: string;
 }
 
 export const vueGrab = (options: VueGrabPluginOptions = {}) => {
   const {
     adapter,
     enabled = true,
+    scriptSrc = "//unpkg.com/vue-grab/dist/index.global.js",
   } = options;
 
   const dataAttrs: string[] = [];
@@ -20,7 +22,7 @@ export const vueGrab = (options: VueGrabPluginOptions = {}) => {
   }
 
   const scriptTag = `<script
-      src="//unpkg.com/vue-grab/dist/index.global.js"
+      src="${scriptSrc}"
       crossorigin="anonymous"
       ${dataAttrs.join("\n      ")}
     ></script>`;

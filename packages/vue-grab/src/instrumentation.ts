@@ -7,16 +7,47 @@ export interface StackItem {
 
 // Helper to get Vue component instance from a DOM element
 const getVueInstance = (element: Element): any => {
-  // Try to get Vue instance from the element
-  // Vue 3 uses __vnode for the virtual node
+  // Vue 2: Check for __vue__ (double underscore at end)
+  if ((element as any).__vue__) {
+    return (element as any).__vue__;
+  }
+
+  // Vue 3: Check if element has Vue instance properties
+  const keys = Object.getOwnPropertyNames(element);
+  for (const key of keys) {
+    if (key.startsWith("__vue")) {
+      const value = (element as any)[key];
+      if (value?.type || value?.component) {
+        return value.component || value;
+      }
+    }
+  }
+
+  // Vue 3: Try to get instance from vnode
   const vnode = (element as any).__vnode;
-  if (vnode) {
+  if (vnode?.component) {
     return vnode.component;
   }
 
   // Try parent elements
   let current = element.parentElement;
   while (current) {
+    // Vue 2: Check parent for __vue__
+    if ((current as any).__vue__) {
+      return (current as any).__vue__;
+    }
+
+    // Vue 3: Check parent for Vue instance properties
+    const currentKeys = Object.getOwnPropertyNames(current);
+    for (const key of currentKeys) {
+      if (key.startsWith("__vue")) {
+        const value = (current as any)[key];
+        if (value?.type || value?.component) {
+          return value.component || value;
+        }
+      }
+    }
+
     const parentVnode = (current as any).__vnode;
     if (parentVnode?.component) {
       return parentVnode.component;
@@ -31,16 +62,34 @@ const getVueInstance = (element: Element): any => {
 const getComponentName = (component: any): string => {
   if (!component) return "Unknown";
 
-  // Try various ways to get the component name
+  // Vue 3: Try various ways to get the component name
   if (component.type?.name) return component.type.name;
   if (component.type?.__name) return component.type.__name;
   if (component.proxy?.$options?.name) return component.proxy.$options.name;
   if (component.proxy?.$options?.__name) return component.proxy.$options.__name;
 
-  // Try to extract from file path if available
+  // Vue 2: Try $options.name directly
+  if (component.$options?.name) return component.$options.name;
+  if (component.$options?._componentTag)
+    return component.$options._componentTag;
+
+  // Vue 3: Try to extract from file path
   if (component.type?.__file) {
     const filePath = component.type.__file;
-    const fileName = filePath.split('/').pop()?.replace(/\.(vue|js|ts)$/, '');
+    const fileName = filePath
+      .split("/")
+      .pop()
+      ?.replace(/\.(vue|js|ts)$/, "");
+    if (fileName) return fileName;
+  }
+
+  // Vue 2: Try to extract from file path
+  if (component.$options?.__file) {
+    const filePath = component.$options.__file;
+    const fileName = filePath
+      .split("/")
+      .pop()
+      ?.replace(/\.(vue|js|ts)$/, "");
     if (fileName) return fileName;
   }
 
@@ -51,13 +100,18 @@ const getComponentName = (component: any): string => {
 const getComponentFile = (component: any): string | undefined => {
   if (!component) return undefined;
 
-  // Vue 3 stores file path in __file
+  // Vue 3: File path in type.__file
   if (component.type?.__file) {
     return component.type.__file;
   }
 
   if (component.proxy?.$options?.__file) {
     return component.proxy.$options.__file;
+  }
+
+  // Vue 2: File path in $options.__file
+  if (component.$options?.__file) {
+    return component.$options.__file;
   }
 
   return undefined;
@@ -83,7 +137,9 @@ const buildComponentStack = (component: any): StackItem[] => {
   return stack;
 };
 
-export const getStack = async (element: Element): Promise<StackItem[] | null> => {
+export const getStack = async (
+  element: Element,
+): Promise<StackItem[] | null> => {
   try {
     const component = getVueInstance(element);
     if (!component) return null;
@@ -102,7 +158,7 @@ export const filterStack = (stack: StackItem[]) => {
       item.fileName &&
       !item.fileName.includes("node_modules") &&
       item.componentName.length > 1 &&
-      !item.fileName.startsWith("_")
+      !item.fileName.startsWith("_"),
   );
 };
 
@@ -215,36 +271,63 @@ export const getHTMLSnippet = (element: Element) => {
     }
 
     if (el.className && typeof el.className === "string") {
-      const classes = el.className.trim().split(/\s+/);
+      const classes = el.className
+        .trim()
+        .split(/\s+/)
+        .filter((c) => !c.startsWith("data-v-"));
       if (classes.length > 0 && classes[0]) {
         const displayClasses = compact ? classes.slice(0, 3) : classes;
         let classStr = displayClasses.join(" ");
-        if (classStr.length > 30) {
-          classStr = classStr.substring(0, 30) + "...";
+        if (classStr.length > 50) {
+          classStr = classStr.substring(0, 50) + "...";
         }
         attrs.push(`class="${classStr}"`);
       }
     }
 
-    const dataAttrs = Array.from(el.attributes).filter((attr) =>
-      attr.name.startsWith("data-"),
-    );
-    const displayDataAttrs = compact ? dataAttrs.slice(0, 1) : dataAttrs;
-    for (const attr of displayDataAttrs) {
-      let value = attr.value;
-      if (value.length > 20) {
-        value = value.substring(0, 20) + "...";
+    const importantAttrs = [
+      "type",
+      "name",
+      "placeholder",
+      "value",
+      "href",
+      "src",
+      "alt",
+      "for",
+      "role",
+    ];
+    for (const attrName of importantAttrs) {
+      const attrValue = el.getAttribute(attrName);
+      if (attrValue !== null) {
+        let value = attrValue;
+        if (value.length > 40) {
+          value = value.substring(0, 40) + "...";
+        }
+        attrs.push(`${attrName}="${value}"`);
       }
-      attrs.push(`${attr.name}="${value}"`);
     }
 
-    const ariaLabel = el.getAttribute("aria-label");
-    if (ariaLabel && !compact) {
-      let value = ariaLabel;
-      if (value.length > 20) {
-        value = value.substring(0, 20) + "...";
+    if (!compact) {
+      const dataAttrs = Array.from(el.attributes).filter(
+        (attr) =>
+          attr.name.startsWith("data-") && !attr.name.startsWith("data-v-"),
+      );
+      for (const attr of dataAttrs.slice(0, 2)) {
+        let value = attr.value;
+        if (value.length > 20) {
+          value = value.substring(0, 20) + "...";
+        }
+        attrs.push(`${attr.name}="${value}"`);
       }
-      attrs.push(`aria-label="${value}"`);
+
+      const ariaLabel = el.getAttribute("aria-label");
+      if (ariaLabel) {
+        let value = ariaLabel;
+        if (value.length > 30) {
+          value = value.substring(0, 30) + "...";
+        }
+        attrs.push(`aria-label="${value}"`);
+      }
     }
 
     return attrs.length > 0
@@ -257,9 +340,19 @@ export const getHTMLSnippet = (element: Element) => {
   };
 
   const getTextContent = (el: Element) => {
-    let text = el.textContent || "";
-    text = text.trim().replace(/\s+/g, " ");
-    const maxLength = 60;
+    let text = "";
+
+    for (const node of el.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const nodeText = node.textContent?.trim();
+        if (nodeText) {
+          text += (text ? " " : "") + nodeText;
+        }
+      }
+    }
+
+    text = text.replace(/\s+/g, " ").trim();
+    const maxLength = 100;
     if (text.length > maxLength) {
       text = text.substring(0, maxLength) + "...";
     }
@@ -298,16 +391,48 @@ export const getHTMLSnippet = (element: Element) => {
     if (targetIndex > 0) {
       const prevSibling = siblings[targetIndex - 1];
       const prevId = getSiblingIdentifier(prevSibling);
-      if (prevId && targetIndex <= 2) {
+      const prevText = getTextContent(prevSibling);
+
+      if (targetIndex === 1) {
         const indent = "  ".repeat(ancestors.length);
-        lines.push(`${indent}  ${getElementTag(prevSibling, true)}`);
-        lines.push(`${indent}  </${prevSibling.tagName.toLowerCase()}>`);
-      } else if (targetIndex > 0) {
+        if (
+          prevText &&
+          prevText.length < 40 &&
+          prevSibling.children.length === 0
+        ) {
+          lines.push(
+            `${indent}  ${getElementTag(prevSibling, true)}${prevText}</${prevSibling.tagName.toLowerCase()}>`,
+          );
+        } else {
+          lines.push(
+            `${indent}  ${getElementTag(prevSibling, true)}</${prevSibling.tagName.toLowerCase()}>`,
+          );
+        }
+      } else if (targetIndex === 2 && prevId) {
+        const indent = "  ".repeat(ancestors.length);
+        const prevPrevSibling = siblings[targetIndex - 2];
+        lines.push(
+          `${indent}  ${getElementTag(prevPrevSibling, true)}</${prevPrevSibling.tagName.toLowerCase()}>`,
+        );
+        if (
+          prevText &&
+          prevText.length < 40 &&
+          prevSibling.children.length === 0
+        ) {
+          lines.push(
+            `${indent}  ${getElementTag(prevSibling, true)}${prevText}</${prevSibling.tagName.toLowerCase()}>`,
+          );
+        } else {
+          lines.push(
+            `${indent}  ${getElementTag(prevSibling, true)}</${prevSibling.tagName.toLowerCase()}>`,
+          );
+        }
+      } else if (targetIndex > 2) {
         const indent = "  ".repeat(ancestors.length);
         lines.push(
-          `${indent}  ... (${targetIndex} element${
+          `${indent}  ... (${targetIndex} sibling${
             targetIndex === 1 ? "" : "s"
-          })`,
+          } before)`,
         );
       }
     }
@@ -319,7 +444,7 @@ export const getHTMLSnippet = (element: Element) => {
   const textContent = getTextContent(element);
   const childrenCount = element.children.length;
 
-  if (textContent && childrenCount === 0 && textContent.length < 40) {
+  if (textContent && childrenCount === 0 && textContent.length < 60) {
     lines.push(
       `${indent}  ${getElementTag(element)}${textContent}${getClosingTag(
         element,
@@ -327,15 +452,30 @@ export const getHTMLSnippet = (element: Element) => {
     );
   } else {
     lines.push(indent + "  " + getElementTag(element));
-    if (textContent) {
+    if (textContent && childrenCount === 0) {
       lines.push(`${indent}    ${textContent}`);
     }
-    if (childrenCount > 0) {
-      lines.push(
-        `${indent}    ... (${childrenCount} element${
-          childrenCount === 1 ? "" : "s"
-        })`,
-      );
+    if (childrenCount > 0 && childrenCount <= 8) {
+      for (let i = 0; i < childrenCount; i++) {
+        const child = element.children[i];
+        const childTag = getElementTag(child, true);
+        const childText = getTextContent(child);
+        if (childText && childText.length < 50 && child.children.length === 0) {
+          lines.push(
+            `${indent}    ${childTag}${childText}</${child.tagName.toLowerCase()}>`,
+          );
+        } else if (childText && childText.length < 30) {
+          lines.push(`${indent}    ${childTag}`);
+          lines.push(`${indent}      ${childText}`);
+          lines.push(`${indent}    </${child.tagName.toLowerCase()}>`);
+        } else {
+          lines.push(
+            `${indent}    ${childTag}</${child.tagName.toLowerCase()}>`,
+          );
+        }
+      }
+    } else if (childrenCount > 8) {
+      lines.push(`${indent}    ... (${childrenCount} child elements)`);
     }
     lines.push(indent + "  " + getClosingTag(element));
   }
@@ -346,14 +486,45 @@ export const getHTMLSnippet = (element: Element) => {
     if (siblingsAfter > 0) {
       const nextSibling = siblings[targetIndex + 1];
       const nextId = getSiblingIdentifier(nextSibling);
-      if (nextId && siblingsAfter <= 2) {
-        lines.push(`${indent}  ${getElementTag(nextSibling, true)}`);
-        lines.push(`${indent}  </${nextSibling.tagName.toLowerCase()}>`);
-      } else {
+      const nextText = getTextContent(nextSibling);
+
+      if (siblingsAfter === 1) {
+        if (
+          nextText &&
+          nextText.length < 40 &&
+          nextSibling.children.length === 0
+        ) {
+          lines.push(
+            `${indent}  ${getElementTag(nextSibling, true)}${nextText}</${nextSibling.tagName.toLowerCase()}>`,
+          );
+        } else {
+          lines.push(
+            `${indent}  ${getElementTag(nextSibling, true)}</${nextSibling.tagName.toLowerCase()}>`,
+          );
+        }
+      } else if (siblingsAfter === 2 && nextId) {
+        const nextNextSibling = siblings[targetIndex + 2];
+        if (
+          nextText &&
+          nextText.length < 40 &&
+          nextSibling.children.length === 0
+        ) {
+          lines.push(
+            `${indent}  ${getElementTag(nextSibling, true)}${nextText}</${nextSibling.tagName.toLowerCase()}>`,
+          );
+        } else {
+          lines.push(
+            `${indent}  ${getElementTag(nextSibling, true)}</${nextSibling.tagName.toLowerCase()}>`,
+          );
+        }
         lines.push(
-          `${indent}  ... (${siblingsAfter} element${
+          `${indent}  ${getElementTag(nextNextSibling, true)}</${nextNextSibling.tagName.toLowerCase()}>`,
+        );
+      } else if (siblingsAfter > 2) {
+        lines.push(
+          `${indent}  ... (${siblingsAfter} sibling${
             siblingsAfter === 1 ? "" : "s"
-          })`,
+          } after)`,
         );
       }
     }

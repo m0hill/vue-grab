@@ -23,8 +23,8 @@
   },
   "license": "MIT",
   "author": {
-    "name": "Aiden Bai",
-    "email": "aiden@million.dev"
+    "name": "Mohil Garg",
+    "email": "mohilg@outlook.com"
   },
   "type": "module",
   "exports": {
@@ -39,6 +39,16 @@
         "default": "./dist/index.cjs"
       }
     },
+    "./vite": {
+      "import": {
+        "types": "./dist/plugins/vite.d.ts",
+        "default": "./dist/plugins/vite.js"
+      },
+      "require": {
+        "types": "./dist/plugins/vite.d.cts",
+        "default": "./dist/plugins/vite.cjs"
+      }
+    },
     "./plugins/vite": {
       "import": {
         "types": "./dist/plugins/vite.d.ts",
@@ -49,15 +59,11 @@
         "default": "./dist/plugins/vite.cjs"
       }
     },
-    "./dist/*": "./dist/*.js",
-    "./dist/*.js": "./dist/*.js",
-    "./dist/*.cjs": "./dist/*.cjs",
-    "./dist/*.mjs": "./dist/*.mjs"
+    "./dist/index.global.js": "./dist/index.global.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "browser": "dist/index.global.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist",
     "package.json",

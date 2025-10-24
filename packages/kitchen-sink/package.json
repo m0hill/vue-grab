@@ -1,5 +1,5 @@
 {
-  "name": "@react-grab/kitchen-sink",
+  "name": "@vue-grab/kitchen-sink",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,12 +8,11 @@
     "dev": "vite"
   },
   "dependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-grab": "workspace:*"
+    "vue": "^3.5.13",
+    "vue-grab": "workspace:*"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.3",
+    "@vitejs/plugin-vue": "^5.2.1",
     "vite": "^6.0.2"
   }
 }
