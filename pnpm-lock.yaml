@@ -21,8 +21,8 @@ importers:
         specifier: ^3.5.13
         version: 3.5.22(typescript@5.9.3)
       vue-grab:
-        specifier: ^0.0.1
-        version: 0.0.1
+        specifier: workspace:*
+        version: link:../vue-grab
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: ^5.2.1
@@ -101,8 +101,8 @@ importers:
         specifier: ^5.4.11
         version: 5.4.21(terser@5.44.0)
       vue-grab:
-        specifier: ^0.0.1
-        version: 0.0.1
+        specifier: workspace:*
+        version: link:../vue-grab
 
 packages:
 

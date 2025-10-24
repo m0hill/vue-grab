@@ -1,5 +1,14 @@
 # vue-grab
 
+## 0.0.4
+
+### Patch Changes
+
+- Enhanced component stack filtering and serialization
+- Improved Vue 2/3 compatibility for component traversal
+- Added props and attrs display in component stack output
+- Fixed rendering performance by removing continuous render loop
+
 ## 0.0.3
 
 ### Patch Changes

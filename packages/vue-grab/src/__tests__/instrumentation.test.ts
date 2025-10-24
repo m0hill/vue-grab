@@ -60,7 +60,7 @@ describe("instrumentation", () => {
 
     it("should truncate long text content", () => {
       const element = document.createElement("div");
-      element.textContent = "a".repeat(100);
+      element.textContent = "a".repeat(150);
       document.body.appendChild(element);
 
       const snippet = getHTMLSnippet(element);
@@ -163,6 +163,35 @@ describe("instrumentation", () => {
       expect(filtered).toHaveLength(1);
       expect(filtered[0].componentName).toBe("MyComponent");
     });
+
+    it("should retain meaningful components even without file info", () => {
+      const stack: StackItem[] = [
+        { componentName: "RadioOption", fileName: undefined },
+        { componentName: "RadioGroup", fileName: undefined },
+        { componentName: "FormSection", fileName: undefined },
+      ];
+
+      const filtered = filterStack(stack);
+
+      expect(filtered).toHaveLength(3);
+      expect(filtered[0].componentName).toBe("RadioOption");
+      expect(filtered[2].componentName).toBe("FormSection");
+    });
+
+    it("should drop framework wrapper components", () => {
+      const stack: StackItem[] = [
+        { componentName: "Target", fileName: undefined },
+        { componentName: "KeepAlive", fileName: undefined },
+        { componentName: "RouterView", fileName: "/src/router-view.js" },
+        { componentName: "PageView", fileName: "/src/PageView.vue" },
+      ];
+
+      const filtered = filterStack(stack);
+
+      expect(filtered).toHaveLength(2);
+      expect(filtered[0].componentName).toBe("Target");
+      expect(filtered[1].componentName).toBe("PageView");
+    });
   });
 
   describe("serializeStack", () => {
@@ -178,9 +207,9 @@ describe("instrumentation", () => {
 
       const serialized = serializeStack(stack);
 
-      expect(serialized).toContain("MyComponent (/src/MyComponent.vue)");
-      expect(serialized).toContain("/src/MyComponent.vue:10:5");
-      expect(serialized).toContain("App (/src/App.vue)");
+      expect(serialized).toContain("➤ MyComponent (/src/MyComponent.vue)");
+      expect(serialized).toContain("source: /src/MyComponent.vue:10:5");
+      expect(serialized).toContain("↳ App (/src/App.vue)");
     });
 
     it("should use displayName when available", () => {
@@ -194,8 +223,8 @@ describe("instrumentation", () => {
 
       const serialized = serializeStack(stack);
 
-      expect(serialized).toContain("MyBeautifulComponent");
-      expect(serialized).not.toContain("component (");
+      expect(serialized).toContain("➤ MyBeautifulComponent (/src/MyComponent.vue)");
+      expect(serialized).not.toContain("component (/src");
     });
 
     it("should handle items without fileName", () => {
@@ -205,7 +234,7 @@ describe("instrumentation", () => {
 
       const serialized = serializeStack(stack);
 
-      expect(serialized).toBe("MyComponent");
+      expect(serialized).toBe("➤ MyComponent");
     });
 
     it("should add source info only for first item", () => {
@@ -225,8 +254,24 @@ describe("instrumentation", () => {
       const serialized = serializeStack(stack);
       const lines = serialized.split("\n");
 
-      expect(lines).toContain("/src/First.vue:10:5");
+      expect(lines).toContain("    source: /src/First.vue:10:5");
       expect(serialized).not.toContain("/src/Second.vue:20:10");
+    });
+
+    it("should include props and attrs when available", () => {
+      const stack: StackItem[] = [
+        {
+          componentName: "FormSection",
+          fileName: "/src/FormSection.vue",
+          props: { title: "Choose", options: ["A", "B"] },
+          attrs: { id: "section" },
+        },
+      ];
+
+      const serialized = serializeStack(stack);
+
+      expect(serialized).toContain("props: title: Choose, options: [A, B]");
+      expect(serialized).toContain("attrs: id: section");
     });
   });
 
@@ -250,6 +295,21 @@ describe("instrumentation", () => {
             name: "MyComponent",
             __file: "/src/MyComponent.vue",
           },
+          subTree: {
+            loc: {
+              start: {
+                column: 5,
+                line: 10,
+              },
+            },
+          },
+          props: {
+            id: "option",
+            label: "Radio",
+          },
+          attrs: {
+            role: "radio",
+          },
           parent: {
             type: {
               name: "App",
@@ -262,16 +322,81 @@ describe("instrumentation", () => {
 
       document.body.appendChild(element);
 
-      const stack = await getStack(element);
+    const stack = await getStack(element);
 
-      expect(stack).not.toBeNull();
-      expect(stack).toHaveLength(2);
-      expect(stack?.[0].componentName).toBe("MyComponent");
-      expect(stack?.[0].fileName).toBe("/src/MyComponent.vue");
-      expect(stack?.[1].componentName).toBe("App");
-    });
+    expect(stack).not.toBeNull();
+    expect(stack).toHaveLength(2);
+    expect(stack?.[0].componentName).toBe("MyComponent");
+    expect(stack?.[0].source).toBe("/src/MyComponent.vue:10:5");
+    expect(stack?.[0].props).toEqual({ id: "option", label: "Radio" });
+    expect(stack?.[0].attrs).toEqual({ role: "radio" });
+    expect(stack?.[0].fileName).toBe("/src/MyComponent.vue");
+    expect(stack?.[1].componentName).toBe("App");
+  });
 
-    it("should handle component without name", async () => {
+  it("should use __vueParentComponent when available", async () => {
+    const element = document.createElement("div");
+    (element as any).__vueParentComponent = {
+      type: {
+        name: "InlineComponent",
+        __file: "/src/Inline.vue",
+      },
+      parent: null,
+    };
+
+    document.body.appendChild(element);
+
+    const stack = await getStack(element);
+
+    expect(stack).not.toBeNull();
+    expect(stack).toHaveLength(1);
+    expect(stack?.[0].componentName).toBe("InlineComponent");
+  });
+
+  it("should traverse Vue 2 $parent chain", async () => {
+    const element = document.createElement("div");
+
+    const rootInstance = {
+      $options: {
+        name: "RootApp",
+        __file: "/src/App.vue",
+      },
+      parent: null,
+      $parent: null,
+    };
+
+    const parentInstance = {
+      $options: {
+        name: "ParentComponent",
+        __file: "/src/Parent.vue",
+      },
+      parent: null,
+      $parent: rootInstance,
+    };
+
+    const childInstance = {
+      $options: {
+        name: "ChildComponent",
+        __file: "/src/Child.vue",
+      },
+      parent: null,
+      $parent: parentInstance,
+    };
+
+    (element as any).__vue__ = childInstance;
+
+    document.body.appendChild(element);
+
+    const stack = await getStack(element);
+
+    expect(stack).not.toBeNull();
+    expect(stack).toHaveLength(3);
+    expect(stack?.[0].componentName).toBe("ChildComponent");
+    expect(stack?.[1].componentName).toBe("ParentComponent");
+    expect(stack?.[2].componentName).toBe("RootApp");
+  });
+
+  it("should handle component without name", async () => {
       const element = document.createElement("div");
 
       (element as any).__vnode = {
@@ -289,7 +414,7 @@ describe("instrumentation", () => {
       expect(stack?.[0].componentName).toBe("Anonymous");
     });
 
-    it("should traverse parent elements to find Vue instance", async () => {
+  it("should traverse parent elements to find Vue instance", async () => {
       const parent = document.createElement("div");
       const child = document.createElement("span");
       parent.appendChild(child);
@@ -298,6 +423,7 @@ describe("instrumentation", () => {
         component: {
           type: {
             name: "ParentComponent",
+            __file: "/src/ParentComponent.vue",
           },
           parent: null,
         },

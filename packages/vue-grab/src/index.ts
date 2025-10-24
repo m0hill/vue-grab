@@ -328,9 +328,10 @@ export const init = (options: Options = {}) => {
 
       if (stack) {
         const filteredStack = filterStack(stack);
+        const useStack = filteredStack.length > 0 ? filteredStack : stack;
 
-        if (filteredStack.length > 0) {
-          const serializedStack = serializeStack(filteredStack);
+        if (useStack.length > 0) {
+          const serializedStack = serializeStack(useStack);
           const fullText = `${htmlSnippet}\n\nComponent owner stack:\n${serializedStack}`;
 
           await copyTextToClipboard(
@@ -463,12 +464,7 @@ export const init = (options: Options = {}) => {
     scheduleRender();
   });
 
-  const continuousRender = () => {
-    scheduleRender();
-    requestAnimationFrame(continuousRender);
-  };
-
-  continuousRender();
+  scheduleRender();
 
   return () => {
     window.removeEventListener("mousemove", handleMouseMove);

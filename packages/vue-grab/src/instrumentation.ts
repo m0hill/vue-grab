@@ -3,20 +3,137 @@ export interface StackItem {
   displayName?: string;
   fileName: string | undefined;
   source?: string;
+  props?: Record<string, unknown>;
+  attrs?: Record<string, unknown>;
 }
+
+const FRAMEWORK_COMPONENT_NAMES = new Set([
+  "BaseTransition",
+  "KeepAlive",
+  "Suspense",
+  "Teleport",
+  "Transition",
+  "TransitionGroup",
+]);
+
+const ROUTER_COMPONENT_PATTERN = /^Router(?:View|Link)?$/;
+
+const MAX_OBJECT_KEYS = 6;
+const MAX_ARRAY_ITEMS = 5;
+const MAX_STRING_LENGTH = 120;
+
+const truncateString = (value: string) => {
+  if (value.length <= MAX_STRING_LENGTH) return value;
+  return `${value.slice(0, MAX_STRING_LENGTH)}…`;
+};
+
+const maybeUnwrapRef = (value: unknown): unknown => {
+  if (
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    "value" in (value as Record<string, unknown>) &&
+    Object.keys(value as Record<string, unknown>).length === 1
+  ) {
+    return (value as { value: unknown }).value;
+  }
+  return value;
+};
+
+const sanitizeValue = (value: unknown, depth: number = 0): unknown => {
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  if (depth > 2) {
+    return Array.isArray(value) ? "[Array]" : "{…}";
+  }
+
+  const unwrapped = maybeUnwrapRef(value);
+
+  if (typeof unwrapped === "string") {
+    return truncateString(unwrapped);
+  }
+
+  if (typeof unwrapped === "number" || typeof unwrapped === "boolean") {
+    return unwrapped;
+  }
+
+  if (Array.isArray(unwrapped)) {
+    const items = [] as unknown[];
+    for (let i = 0; i < unwrapped.length && i < MAX_ARRAY_ITEMS; i++) {
+      const sanitized = sanitizeValue(unwrapped[i], depth + 1);
+      if (sanitized !== undefined) {
+        items.push(sanitized);
+      }
+    }
+    if (unwrapped.length > MAX_ARRAY_ITEMS) {
+      items.push("…");
+    }
+    return items.length > 0 ? items : undefined;
+  }
+
+  if (typeof unwrapped === "object") {
+    const result: Record<string, unknown> = {};
+    let inserted = 0;
+
+    for (const [key, raw] of Object.entries(unwrapped)) {
+      if (inserted >= MAX_OBJECT_KEYS) {
+        result["…"] = "…";
+        break;
+      }
+
+      const sanitized = sanitizeValue(raw, depth + 1);
+      if (sanitized !== undefined) {
+        result[key] = sanitized;
+        inserted++;
+      }
+    }
+
+    return Object.keys(result).length > 0 ? result : undefined;
+  }
+
+  return undefined;
+};
+
+const sanitizeRecord = (
+  record: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined => {
+  if (!record) return undefined;
+
+  const entries = Object.entries(record);
+  if (entries.length === 0) return undefined;
+
+  const result: Record<string, unknown> = {};
+
+  for (const [key, value] of entries) {
+    const sanitized = sanitizeValue(value);
+    if (sanitized !== undefined) {
+      result[key] = sanitized;
+    }
+  }
+
+  return Object.keys(result).length > 0 ? result : undefined;
+};
 
 // Helper to get Vue component instance from a DOM element
 const getVueInstance = (element: Element): any => {
+  const anyElement = element as any;
+
+  if (anyElement.__vueParentComponent) {
+    return anyElement.__vueParentComponent;
+  }
+
   // Vue 2: Check for __vue__ (double underscore at end)
-  if ((element as any).__vue__) {
-    return (element as any).__vue__;
+  if (anyElement.__vue__) {
+    return anyElement.__vue__;
   }
 
   // Vue 3: Check if element has Vue instance properties
-  const keys = Object.getOwnPropertyNames(element);
+  const keys = Object.getOwnPropertyNames(anyElement);
   for (const key of keys) {
     if (key.startsWith("__vue")) {
-      const value = (element as any)[key];
+      const value = anyElement[key];
       if (value?.type || value?.component) {
         return value.component || value;
       }
@@ -24,31 +141,43 @@ const getVueInstance = (element: Element): any => {
   }
 
   // Vue 3: Try to get instance from vnode
-  const vnode = (element as any).__vnode;
+  const vnode = anyElement.__vnode;
   if (vnode?.component) {
     return vnode.component;
   }
 
   // Try parent elements
   let current = element.parentElement;
+  const visited = new Set<Element>();
   while (current) {
+    if (visited.has(current)) {
+      break;
+    }
+    visited.add(current);
+
+    const currentAny = current as any;
+
+    if (currentAny.__vueParentComponent) {
+      return currentAny.__vueParentComponent;
+    }
+
     // Vue 2: Check parent for __vue__
-    if ((current as any).__vue__) {
-      return (current as any).__vue__;
+    if (currentAny.__vue__) {
+      return currentAny.__vue__;
     }
 
     // Vue 3: Check parent for Vue instance properties
     const currentKeys = Object.getOwnPropertyNames(current);
     for (const key of currentKeys) {
       if (key.startsWith("__vue")) {
-        const value = (current as any)[key];
+        const value = currentAny[key];
         if (value?.type || value?.component) {
           return value.component || value;
         }
       }
     }
 
-    const parentVnode = (current as any).__vnode;
+    const parentVnode = currentAny.__vnode;
     if (parentVnode?.component) {
       return parentVnode.component;
     }
@@ -117,21 +246,90 @@ const getComponentFile = (component: any): string | undefined => {
   return undefined;
 };
 
+const getComponentSourceLocation = (component: any): string | undefined => {
+  const file = getComponentFile(component);
+  if (!file) return undefined;
+
+  const proxySubTree = component.proxy?.$ ? component.proxy.$.subTree : undefined;
+  const vnode = component.subTree ?? component.vnode ?? proxySubTree;
+  const loc = vnode?.loc ?? vnode?.source?.loc;
+  const start = loc?.start;
+
+  if (start?.line !== undefined && start?.column !== undefined) {
+    return `${file}:${start.line}:${start.column}`;
+  }
+
+  const devtoolsState = component.devtoolsRawSetupState as
+    | Record<string, { loc?: { file?: string; line?: number; column?: number } }>
+    | undefined;
+
+  if (devtoolsState) {
+    for (const entry of Object.values(devtoolsState)) {
+      const locFromDevtools = entry?.loc;
+      if (
+        locFromDevtools &&
+        locFromDevtools.line !== undefined &&
+        locFromDevtools.column !== undefined
+      ) {
+        return `${file}:${locFromDevtools.line}:${locFromDevtools.column}`;
+      }
+    }
+  }
+
+  return undefined;
+};
+
+const getComponentProps = (component: any): Record<string, unknown> | undefined => {
+  const proxyProps = component.proxy?.$props;
+  const vue2Props = component.$props;
+  const rawProps = proxyProps ?? component.props ?? vue2Props;
+  if (!rawProps) return undefined;
+
+  return sanitizeRecord(rawProps as Record<string, unknown>);
+};
+
+const getComponentAttrs = (component: any): Record<string, unknown> | undefined => {
+  const attrs = component.attrs ?? component.proxy?.$attrs ?? component.$attrs;
+  if (!attrs) return undefined;
+
+  return sanitizeRecord(attrs as Record<string, unknown>);
+};
+
+const isFrameworkComponent = (item: StackItem) => {
+  const name = item.componentName;
+  if (!name) return false;
+  if (FRAMEWORK_COMPONENT_NAMES.has(name)) return true;
+  if (ROUTER_COMPONENT_PATTERN.test(name)) return true;
+  const fileName = item.fileName ?? "";
+  if (fileName.includes("node_modules/@vue")) return true;
+  if (fileName.includes("node_modules/vue-router")) return true;
+  if (fileName.includes("node_modules/pinia")) return true;
+  return false;
+};
+
 // Build component stack by walking up the parent chain
 const buildComponentStack = (component: any): StackItem[] => {
   const stack: StackItem[] = [];
   let current = component;
+  const seen = new Set<any>();
 
-  while (current) {
+  while (current && !seen.has(current)) {
+    seen.add(current);
     const name = getComponentName(current);
     const fileName = getComponentFile(current);
+    const source = getComponentSourceLocation(current);
+    const props = getComponentProps(current);
+    const attrs = getComponentAttrs(current);
 
     stack.push({
       componentName: name,
       fileName,
+      source,
+      props,
+      attrs,
     });
 
-    current = current.parent;
+    current = current.parent ?? current.$parent ?? null;
   }
 
   return stack;
@@ -153,29 +351,120 @@ export const getStack = async (
 };
 
 export const filterStack = (stack: StackItem[]) => {
-  return stack.filter(
-    (item) =>
-      item.fileName &&
-      !item.fileName.includes("node_modules") &&
-      item.componentName.length > 1 &&
-      !item.fileName.startsWith("_"),
-  );
+  if (stack.length === 0) return stack;
+
+  const deduped: StackItem[] = [];
+  const seen = new Set<string>();
+
+  for (const item of stack) {
+    const key = `${item.componentName}|${item.fileName ?? ""}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduped.push(item);
+    }
+  }
+
+  const filtered: StackItem[] = [];
+
+  for (let index = 0; index < deduped.length; index++) {
+    const item = deduped[index];
+
+    if (index === 0) {
+      filtered.push(item);
+      continue;
+    }
+
+    const { componentName, fileName } = item;
+    if (!componentName || componentName.length <= 1) {
+      continue;
+    }
+
+    if (componentName === "Anonymous") {
+      continue;
+    }
+
+    if (fileName && fileName.startsWith("_")) {
+      continue;
+    }
+
+    if (fileName && fileName.includes("node_modules")) {
+      continue;
+    }
+
+    if (isFrameworkComponent(item)) {
+      continue;
+    }
+
+    filtered.push(item);
+  }
+
+  if (filtered.length === 0) {
+    const fallback = deduped.find((item) => !isFrameworkComponent(item));
+    return fallback ? [fallback] : [];
+  }
+
+  return filtered;
 };
 
 export const serializeStack = (stack: StackItem[]) => {
-  return stack
-    .map((item, index) => {
-      const fileName = item.fileName;
-      const componentName = item.displayName || item.componentName;
-      let result = `${componentName}${fileName ? ` (${fileName})` : ""}`;
+  const lines: string[] = [];
 
-      if (index === 0 && item.source) {
-        result += `\n${item.source}`;
+  const formatRecord = (record: Record<string, unknown>) => {
+    const parts: string[] = [];
+    for (const [key, value] of Object.entries(record)) {
+      if (value === undefined) continue;
+
+      if (Array.isArray(value)) {
+        const formattedItems = value
+          .map((item) =>
+            typeof item === "object" && item !== null
+              ? JSON.stringify(item)
+              : String(item),
+          )
+          .join(", ");
+        parts.push(`${key}: [${formattedItems}]`);
+        continue;
       }
 
-      return result;
-    })
-    .join("\n");
+      if (typeof value === "object" && value !== null) {
+        parts.push(`${key}: ${JSON.stringify(value)}`);
+        continue;
+      }
+
+      parts.push(`${key}: ${String(value)}`);
+    }
+    return parts.join(", ");
+  };
+
+  stack.forEach((item, index) => {
+    const componentName = item.displayName || item.componentName;
+    const prefix = index === 0 ? "➤" : "↳";
+    const lineParts = [`${prefix} ${componentName}`];
+    if (item.fileName) {
+      lineParts.push(`(${item.fileName})`);
+    }
+    lines.push(lineParts.join(" "));
+
+    if (item.source && index === 0) {
+      lines.push(`    source: ${item.source}`);
+    }
+
+    if (item.props) {
+      const formattedProps = formatRecord(item.props);
+      if (formattedProps) {
+        lines.push(`    props: ${formattedProps}`);
+      }
+    }
+
+    if (item.attrs) {
+      const formattedAttrs = formatRecord(item.attrs);
+      if (formattedAttrs) {
+        lines.push(`    attrs: ${formattedAttrs}`);
+      }
+    }
+  });
+
+  return lines.join("\n");
 };
 
 export const getHTMLSnippet = (element: Element) => {
