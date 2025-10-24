@@ -1,4 +1,4 @@
-import { highlightCodeWithCopy } from '@/lib/shiki';
+import { highlightCodeSimple } from '@/lib/shiki';
 
 interface InstallCodeBlockProps {
   code: string;
@@ -9,7 +9,7 @@ export async function InstallCodeBlock({
   code,
   lang = 'tsx',
 }: InstallCodeBlockProps) {
-  const html = await highlightCodeWithCopy(code.trim(), lang, 'vesper');
+  const html = await highlightCodeSimple(code.trim(), lang, 'vesper');
 
   return (
     <div

@@ -4,7 +4,6 @@ import {
   type CodeToHastOptions,
   type Highlighter,
 } from "shiki";
-import { transformerCopyButton } from "@shikijs/transformers";
 
 function applyColorOverrides(html: string): string {
   return html.replace(/#99FFE4/gi, "#9f9f9f").replace(/#FFC799/gi, "#ffa0f3");
@@ -60,21 +59,6 @@ export async function highlightCodeSimple(
   theme: "vesper" = "vesper",
 ): Promise<string> {
   const options: CodeToHastOptions = { lang, theme };
-  let html = await codeToHtml(code, options);
-  html = applyColorOverrides(html);
-  return html;
-}
-
-export async function highlightCodeWithCopy(
-  code: string,
-  lang: string,
-  theme: "vesper" = "vesper",
-): Promise<string> {
-  const options: CodeToHastOptions = { 
-    lang, 
-    theme,
-    transformers: [transformerCopyButton()],
-  };
   let html = await codeToHtml(code, options);
   html = applyColorOverrides(html);
   return html;
