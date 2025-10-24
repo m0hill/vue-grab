@@ -991,7 +991,7 @@ export default function Frame() {
                   width: "fit-content",
                 }}
               >
-                Install in Cursor
+                Install using Cursor
               </div>
             </div>
           </a>
