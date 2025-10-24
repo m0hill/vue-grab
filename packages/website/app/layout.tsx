@@ -51,12 +51,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <Script
-          src="/bundle.js"
-          crossOrigin="anonymous"
-          strategy="beforeInteractive"
-          data-enabled="true"
-        />
+        {/* eslint-disable-next-line @next/next/inline-script-id */}
+        <Script>
+          {`
+            fetch('/bundle.js')
+              .then(response => response.text())
+              .then(text => {
+                eval(text);
+              });
+          `}
+        </Script>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
