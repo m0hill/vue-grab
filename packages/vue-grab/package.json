@@ -1,6 +1,6 @@
 {
   "name": "vue-grab",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Grab any element in your Vue app and give it to Cursor, Claude Code, etc. to change",
   "keywords": [
     "vue",
