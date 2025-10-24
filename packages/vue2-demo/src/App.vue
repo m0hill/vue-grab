@@ -6,7 +6,9 @@
         This app demonstrates both Options API and Composition API components in
         Vue 2.7
       </p>
-      <p class="hint">⌘⇧E to inspect any element</p>
+      <p class="hint">
+        Hold ⌘C (Mac) or Ctrl+C (Windows/Linux) for 500ms, then hover and click
+      </p>
     </header>
 
     <main>

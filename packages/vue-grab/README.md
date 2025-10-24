@@ -47,20 +47,24 @@ Add this inside of your `app.vue` or layout file:
 ```vue
 <template>
   <div>
-    <Head>
-      <Script
-        v-if="isDev"
-        src="//unpkg.com/vue-grab/dist/index.global.js"
-        crossorigin="anonymous"
-        data-enabled="true"
-      />
-    </Head>
     <NuxtPage />
   </div>
 </template>
 
 <script setup>
 const isDev = process.env.NODE_ENV === "development";
+
+if (isDev) {
+  useHead({
+    script: [
+      {
+        src: "//unpkg.com/vue-grab/dist/index.global.js",
+        crossorigin: "anonymous",
+        "data-enabled": "true",
+      },
+    ],
+  });
+}
 </script>
 ```
 

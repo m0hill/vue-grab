@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@vue-grab/kitchen-sink"]
+  "ignore": ["@vue-grab/kitchen-sink", "vue2-demo", "nuxt-demo"]
 }

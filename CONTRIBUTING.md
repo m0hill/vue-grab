@@ -120,7 +120,7 @@ cd packages/vue2-demo
 pnpm dev
 ```
 
-Then open your browser and test the functionality by pressing <kbd>⌘⇧E</kbd> (or <kbd>Ctrl+Shift+E</kbd> on Windows/Linux) and clicking elements.
+Then open your browser and test the functionality by holding <kbd>⌘C</kbd> (or <kbd>Ctrl+C</kbd> on Windows/Linux) for 500ms, then hovering and clicking elements.
 
 ## Making Changes
 
