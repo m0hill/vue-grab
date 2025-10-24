@@ -13,13 +13,13 @@
     "modifications",
     "modification"
   ],
-  "homepage": "https://github.com/aidenybai/react-grab#readme",
+  "homepage": "https://github.com/m0hill/vue-grab#readme",
   "bugs": {
-    "url": "https://github.com/aidenybai/react-grab/issues"
+    "url": "https://github.com/m0hill/vue-grab/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aidenybai/react-grab.git"
+    "url": "git+https://github.com/m0hill/vue-grab.git"
   },
   "license": "MIT",
   "author": {

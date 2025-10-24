@@ -102,6 +102,10 @@ init({
 });
 ```
 
+## Credits
+
+Vue Grab is inspired by and adapted from [React Grab](https://github.com/aidenybai/react-grab) by Aiden Bai.
+
 ## License
 
-Vue Grab is MIT-licensed open-source software, based on [React Grab](https://github.com/aidenybai/react-grab).
+Vue Grab is MIT-licensed open-source software.
