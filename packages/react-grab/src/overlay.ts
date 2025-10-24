@@ -134,7 +134,6 @@ export const createGrabbedOverlay = (root: HTMLElement, selection: Selection) =>
 
   root.appendChild(element);
 
-  // Fade out and self-delete
   requestAnimationFrame(() => {
     element.style.opacity = "0";
   });
@@ -282,9 +281,7 @@ export const updateLabelToProcessing = (
   selectionLeftPx?: number,
   selectionTopPx?: number
 ) => {
-  // Always create a new indicator for each grab operation
   const indicator = createIndicator();
-  // Ensure grabbed indicator appears above selection label
   indicator.style.zIndex = "2147483648";
   root.appendChild(indicator);
   activeGrabbedIndicators.add(indicator);
@@ -330,10 +327,8 @@ export const updateLabelToProcessing = (
   indicator.appendChild(loadingSpinner);
   indicator.appendChild(labelText);
 
-  // Position after content is added
   positionIndicator();
 
-  // Show the indicator
   requestAnimationFrame(() => {
     indicator.style.opacity = "1";
   });
@@ -359,7 +354,6 @@ export const updateLabelToProcessing = (
     indicator.appendChild(checkmarkIcon);
     indicator.appendChild(newLabelText);
 
-    // Reposition after content changes to "Grabbed!"
     requestAnimationFrame(() => {
       positionIndicator();
     });
@@ -399,7 +393,6 @@ const createProgressIndicatorElement = (): HTMLDivElement => {
   container.style.opacity = "0";
   container.style.transition = "opacity 0.1s ease-in-out";
 
-  // Progress bar container
   const progressBarContainer = document.createElement("div");
   progressBarContainer.style.width = "32px";
   progressBarContainer.style.height = "2px";
@@ -408,7 +401,6 @@ const createProgressIndicatorElement = (): HTMLDivElement => {
   progressBarContainer.style.overflow = "hidden";
   progressBarContainer.style.position = "relative";
 
-  // Progress bar fill
   const progressBarFill = document.createElement("div");
   progressBarFill.style.width = "0%";
   progressBarFill.style.height = "100%";
@@ -447,18 +439,14 @@ export const showProgressIndicator = (
   const CURSOR_OFFSET = 14;
   const VIEWPORT_MARGIN = 8;
 
-  // Center horizontally around the cursor
   let indicatorLeft = mouseX - indicatorRect.width / 2;
 
-  // Try positioning below the cursor first
   let indicatorTop = mouseY + CURSOR_OFFSET;
 
-  // Check if there's enough space below, otherwise position above
   if (indicatorTop + indicatorRect.height + VIEWPORT_MARGIN > viewportHeight) {
     indicatorTop = mouseY - indicatorRect.height - CURSOR_OFFSET;
   }
 
-  // Clamp to viewport bounds
   indicatorTop = Math.max(
     VIEWPORT_MARGIN,
     Math.min(indicatorTop, viewportHeight - indicatorRect.height - VIEWPORT_MARGIN)
