@@ -14,6 +14,8 @@ By default coding agents cannot access elements on your page. React Grab fixes t
 
 ### [Try out a demo! →](https://react-grab.com)
 
+![React Grab Demo](https://react-grab.com/demo.gif)
+
 ## Install
 
 Get started in 1 minute by adding this script tag to your app:
