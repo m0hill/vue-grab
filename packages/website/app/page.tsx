@@ -328,8 +328,9 @@ export default defineConfig({
                     MozOsxFontSmoothing: "grayscale",
                     transformOrigin: "50% 50%",
                     WebkitFontSmoothing: "antialiased",
-                    whiteSpace: "pre",
-                    width: "fit-content",
+                    whiteSpace: "pre-wrap",
+                    width: "100%",
+                    wordBreak: "break-all",
                   }}
                 >
                   Cursor,
@@ -385,8 +386,9 @@ export default defineConfig({
                     MozOsxFontSmoothing: "grayscale",
                     transformOrigin: "50% 50%",
                     WebkitFontSmoothing: "antialiased",
-                    whiteSpace: "pre",
-                    width: "fit-content",
+                    whiteSpace: "pre-wrap",
+                    width: "100%",
+                    wordBreak: "break-all",
                   }}
                 >
                   Claude,
@@ -659,8 +661,9 @@ export default defineConfig({
                     MozOsxFontSmoothing: "grayscale",
                     transformOrigin: "50% 50%",
                     WebkitFontSmoothing: "antialiased",
-                    whiteSpace: "pre",
-                    width: "fit-content",
+                    whiteSpace: "pre-wrap",
+                    width: "100%",
+                    wordBreak: "break-all",
                   }}
                 >
                   Which one?
@@ -874,8 +877,9 @@ export default defineConfig({
                     MozOsxFontSmoothing: "grayscale",
                     transformOrigin: "50% 50%",
                     WebkitFontSmoothing: "antialiased",
-                    whiteSpace: "pre",
-                    width: "fit-content",
+                    whiteSpace: "pre-wrap",
+                    width: "100%",
+                    wordBreak: "break-all",
                   }}
                 >
                   React Grab
@@ -1136,7 +1140,6 @@ export default defineConfig({
               gap: 0,
               height: "fit-content",
               justifyContent: "start",
-              overflowX: "auto",
               paddingBlock: "12px",
               paddingInline: "16px",
               transformOrigin: "50% 50%",
@@ -1158,8 +1161,9 @@ export default defineConfig({
                 MozOsxFontSmoothing: "grayscale",
                 transformOrigin: "50% 50%",
                 WebkitFontSmoothing: "antialiased",
-                whiteSpace: "pre",
-                width: "fit-content",
+                whiteSpace: "pre-wrap",
+                width: "100%",
+                wordBreak: "break-all",
               }}
             >
               <span style={{ color: "#9f9f9f" }}>&lt;</span>
@@ -1360,7 +1364,6 @@ export default defineConfig({
                   gap: 0,
                   height: "fit-content",
                   justifyContent: "start",
-                  overflowX: "auto",
                   paddingBlock: "12px",
                   paddingInline: "16px",
                   transformOrigin: "50% 50%",
@@ -1381,8 +1384,9 @@ export default defineConfig({
                     MozOsxFontSmoothing: "grayscale",
                     transformOrigin: "50% 50%",
                     WebkitFontSmoothing: "antialiased",
-                    whiteSpace: "pre",
-                    width: "fit-content",
+                    whiteSpace: "pre-wrap",
+                    width: "100%",
+                    wordBreak: "break-all",
                   }}
                 >
                     <span style={{ color: "#ffa0f3" }}>import</span> Script <span style={{ color: "#ffa0f3" }}>from</span> <span style={{ color: "#99FFE4" }}>&quot;next/script&quot;</span>;{"\n\n"}
@@ -1487,7 +1491,6 @@ export default defineConfig({
                   gap: 0,
                   height: "fit-content",
                   justifyContent: "start",
-                  overflowX: "auto",
                   paddingBlock: "12px",
                   paddingInline: "16px",
                   transformOrigin: "50% 50%",
@@ -1508,8 +1511,9 @@ export default defineConfig({
                     MozOsxFontSmoothing: "grayscale",
                     transformOrigin: "50% 50%",
                     WebkitFontSmoothing: "antialiased",
-                    whiteSpace: "pre",
-                    width: "fit-content",
+                    whiteSpace: "pre-wrap",
+                    width: "100%",
+                    wordBreak: "break-all",
                   }}
                 >
                     <span style={{ color: "#ffa0f3" }}>import</span> {"{"} Html, Head, Main, NextScript {"}"} <span style={{ color: "#ffa0f3" }}>from</span> <span style={{ color: "#99FFE4" }}>&quot;next/document&quot;</span>;{"\n"}
@@ -1618,7 +1622,6 @@ export default defineConfig({
                   gap: 0,
                   height: "fit-content",
                   justifyContent: "start",
-                  overflowX: "auto",
                   paddingBlock: "12px",
                   paddingInline: "16px",
                   transformOrigin: "50% 50%",
@@ -1639,8 +1642,9 @@ export default defineConfig({
                     MozOsxFontSmoothing: "grayscale",
                     transformOrigin: "50% 50%",
                     WebkitFontSmoothing: "antialiased",
-                    whiteSpace: "pre",
-                    width: "fit-content",
+                    whiteSpace: "pre-wrap",
+                    width: "100%",
+                    wordBreak: "break-all",
                   }}
                 >
                     <span style={{ color: "#ffa0f3" }}>import</span> {"{"} reactGrab {"}"} <span style={{ color: "#ffa0f3" }}>from</span> <span style={{ color: "#99FFE4" }}>&quot;react-grab/plugins/vite&quot;</span>;{"\n\n"}
