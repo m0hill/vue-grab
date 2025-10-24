@@ -1,5 +1,11 @@
 # react-grab
 
+## 0.0.18
+
+### Patch Changes
+
+- fix: owner stack
+
 ## 0.0.17
 
 ### Patch Changes
