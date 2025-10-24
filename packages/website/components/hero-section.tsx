@@ -1,7 +1,4 @@
 import { LogoText } from "./logo-text";
-import { ToolBadge } from "./tool-badge";
-import { IconCursor } from "./icon-cursor";
-import { IconClaude } from "./icon-claude";
 import { ActivateTab } from "./activate-tab";
 import { ConversationExample } from "./conversation-example";
 
@@ -12,65 +9,39 @@ export const HeroSection = () => (
         <div className="flex flex-col gap-4">
           <LogoText size="lg" />
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-wrap">
-            <p className="text-base text-[#9D9D9D] font-grotesk leading-normal">
-              Copy elements on your app as context for
-            </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <ToolBadge
-                icon={
-                  <IconCursor
-                    width={10}
-                    height={10}
-                    className="text-[#ECECEC]"
-                  />
-                }
-                label="Cursor,"
-              />
-              <ToolBadge
-                icon={
-                  <IconClaude
-                    width={10}
-                    height={10}
-                    className="text-[#ECECEC]"
-                  />
-                }
-                label="Claude Code,"
-                gap="gap-0.5"
-              />
-              <p className="text-base text-[#9D9D9D] font-grotesk leading-normal">
-                and others.
-              </p>
-            </div>
-          </div>
+          <p className="text-base text-[#9D9D9D] font-grotesk leading-relaxed">
+            Grab any element on in your app and give it to Cursor, Claude Code,
+            etc. to change.
+          </p>
         </div>
 
         <ActivateTab />
 
         <div className="flex flex-col gap-6">
           <p className="text-base text-[#9D9D9D] font-grotesk leading-relaxed">
-            Previously, it was hard to pinpoint exactly what element you were
-            talking about. Context switching made it hard to make pinpoint
-            changes to your site:
+            By default coding agents cannot access elements on your page. React
+            Grab fixes this - just point and click to provide context!
           </p>
 
           <ConversationExample />
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-2">
-            <p className="text-base text-[#9D9D9D] font-grotesk leading-normal">
-              With
-            </p>
-            <LogoText size="base" />
-          </div>
-
           <div className="text-base text-[#9D9D9D] space-y-1 font-grotesk leading-relaxed">
-            <p>• Hold ⌘C and click to grab the element</p>
-            <p>• Use with any tool you want: Cursor, Claude Code, OpenCode</p>
+            <p>• Hold ⌘C and click on any element on your page</p>
+            <p>• Works with Cursor, Claude Code, OpenCode</p>
             <p>• Just a single script tag (it&apos;s just JavaScript!)</p>
           </div>
         </div>
+
+        <a
+          href="https://github.com/aidenybai/react-grab"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#FF45A2] text-[#0A0A0A] text-sm font-grotesk border border-[#300417] hover:bg-[#FF5BB0] transition-colors w-fit"
+        >
+          View on GitHub
+        </a>
       </div>
     </div>
   </div>

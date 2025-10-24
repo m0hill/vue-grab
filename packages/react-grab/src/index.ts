@@ -47,7 +47,7 @@ export interface Options {
   /**
    * time required (ms) to hold the key to trigger the overlay
    *
-   * default: 1000
+   * default: 500
    */
   keyHoldDuration?: number;
 }
