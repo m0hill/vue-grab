@@ -14,7 +14,13 @@ With React Grab:
 - Works with Cursor, Claude Code, OpenCode
 - Just a single script tag (it’s just JavaScript!)
 
-### Next.js (App router)
+### [Try out a demo! →](https://react-grab.com)
+
+### Install
+
+Installation takes less than 1 minute.
+
+#### Next.js (App router)
 
 Add this inside of your `app/layout.tsx`:
 
@@ -42,7 +48,7 @@ export default function RootLayout({ children }) {
 }
 ```
 
-### Next.js (Pages router)
+#### Next.js (Pages router)
 
 Add this into your `pages/_document.tsx`:
 
@@ -73,7 +79,7 @@ export default function Document() {
 }
 ```
 
-### Vite
+#### Vite
 
 Add this into your root `vite.config.ts`:
 
@@ -89,10 +95,32 @@ export default defineConfig({
 });
 ```
 
-### Script tag
+#### Script tag
 
 Add this anywhere in your app:
 
 ```html
-<script src="//unpkg.com/react-grab/dist/index.global.js" crossorigin="anonymous" data-enabled="true"></script>
+<script
+  src="//unpkg.com/react-grab/dist/index.global.js"
+  crossorigin="anonymous"
+  data-enabled="true"
+></script>
 ```
+
+## Resources & Contributing Back
+
+Want to try it out? Check the [our demo](https://react-grab.com).
+
+Looking to contribute back? Check the [Contributing Guide](https://github.com/aidenybai/react-grab/blob/main/CONTRIBUTING.md) out.
+
+Want to talk to the community? Hop in our [Discord](https://discord.com/invite/G7zxfUzkm7) and share your ideas and what you've build with React Scan.
+
+Find a bug? Head over to our [issue tracker](https://github.com/aidenybai/react-grab/issues) and we'll do our best to help. We love pull requests, too!
+
+We expect all contributors to abide by the terms of our [Code of Conduct](https://github.com/aidenybai/react-grab/blob/main/.github/CODE_OF_CONDUCT.md).
+
+[**→ Start contributing on GitHub**](https://github.com/aidenybai/react-grab/blob/main/CONTRIBUTING.md)
+
+### License
+
+React Scan is MIT-licensed open-source software by Aiden Bai, Million Software, Inc., and contributors.

@@ -29,8 +29,6 @@ import { createStore } from "./utils/store.js";
 export { cursorAdapter } from "./adapters.js";
 export type { Adapter } from "./adapters.js";
 
-import { detectReactBuildType, getRDTHook } from "bippy";
-
 export interface Options {
   /**
    * adapter to open the prompt in an external tool
