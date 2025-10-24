@@ -15,7 +15,9 @@
 }
 
 body {
+  min-height: 100vh;
   background: linear-gradient(to bottom, #050505, #0e0e0e);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
