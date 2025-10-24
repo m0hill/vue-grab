@@ -98,7 +98,6 @@ export const createSelectionOverlay = (root: HTMLElement) => {
     hide: () => {
       visible = false;
       element.style.display = "none";
-      element.style.pointerEvents = "none";
     },
 
     isVisible: () => visible,
@@ -106,7 +105,6 @@ export const createSelectionOverlay = (root: HTMLElement) => {
     show: () => {
       visible = true;
       element.style.display = "block";
-      element.style.pointerEvents = "auto";
     },
 
     update: (selection: Selection) => {

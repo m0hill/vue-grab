@@ -255,8 +255,30 @@ export const init = (options: Options = {}) => {
     }
   };
 
+  let scrollScheduled = false;
+  const handleScroll = () => {
+    if (scrollScheduled) return;
+    scrollScheduled = true;
+    requestAnimationFrame(() => {
+      scrollScheduled = false;
+      scheduleRender();
+    });
+  };
+
+  let resizeScheduled = false;
+  const handleResize = () => {
+    if (resizeScheduled) return;
+    resizeScheduled = true;
+    requestAnimationFrame(() => {
+      resizeScheduled = false;
+      scheduleRender();
+    });
+  };
+
   window.addEventListener("mousemove", handleMouseMove);
   window.addEventListener("mousedown", handleMouseDown);
+  window.addEventListener("scroll", handleScroll, true);
+  window.addEventListener("resize", handleResize);
   document.addEventListener("visibilitychange", handleVisibilityChange);
   const cleanupTrackHotkeys = trackHotkeys();
 
@@ -430,6 +452,8 @@ export const init = (options: Options = {}) => {
   return () => {
     window.removeEventListener("mousemove", handleMouseMove);
     window.removeEventListener("mousedown", handleMouseDown);
+    window.removeEventListener("scroll", handleScroll, true);
+    window.removeEventListener("resize", handleResize);
     document.removeEventListener("visibilitychange", handleVisibilityChange);
     cleanupTrackHotkeys();
     cleanupRenderSubscription();
