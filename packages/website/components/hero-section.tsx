@@ -35,12 +35,12 @@ export const HeroSection = () => (
         </div>
 
         <a
-          href="https://github.com/aidenybai/react-grab"
+          href="https://github.com/aidenybai/react-grab#readme"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#FF45A2] text-[#0A0A0A] text-sm font-grotesk border border-[#300417] hover:bg-[#FF5BB0] transition-colors w-fit"
         >
-          View on GitHub
+          Install on GitHub
         </a>
       </div>
     </div>
