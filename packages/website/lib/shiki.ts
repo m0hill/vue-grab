@@ -1,9 +1,12 @@
-import { codeToHtml, createHighlighter, type CodeToHastOptions, type Highlighter } from 'shiki';
+import {
+  codeToHtml,
+  createHighlighter,
+  type CodeToHastOptions,
+  type Highlighter,
+} from "shiki";
 
 function applyColorOverrides(html: string): string {
-  return html
-    .replace(/#99FFE4/gi, '#9f9f9f')
-    .replace(/#FFC799/gi, '#ffa0f3');
+  return html.replace(/#99FFE4/gi, "#9f9f9f").replace(/#FFC799/gi, "#ffa0f3");
 }
 
 function injectLineNumbers(html: string): string {
@@ -20,8 +23,8 @@ let highlighterInstance: Highlighter | null = null;
 async function getHighlighter() {
   if (!highlighterInstance) {
     highlighterInstance = await createHighlighter({
-      themes: ['vesper'],
-      langs: ['typescript', 'javascript', 'tsx', 'jsx'],
+      themes: ["vesper"],
+      langs: ["typescript", "javascript", "tsx", "jsx", "html"],
     });
   }
   return highlighterInstance;
@@ -30,14 +33,14 @@ async function getHighlighter() {
 interface HighlightCodeOptions {
   code: string;
   lang: string;
-  theme?: 'vesper';
+  theme?: "vesper";
   showLineNumbers?: boolean;
 }
 
 export async function highlightCode({
   code,
   lang,
-  theme = 'vesper',
+  theme = "vesper",
   showLineNumbers = false,
 }: HighlightCodeOptions): Promise<string> {
   const highlighter = await getHighlighter();
@@ -53,7 +56,7 @@ export async function highlightCode({
 export async function highlightCodeSimple(
   code: string,
   lang: string,
-  theme: 'vesper' = 'vesper'
+  theme: "vesper" = "vesper",
 ): Promise<string> {
   const options: CodeToHastOptions = { lang, theme };
   let html = await codeToHtml(code, options);
