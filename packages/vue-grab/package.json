@@ -67,6 +67,9 @@
   "scripts": {
     "build": "NODE_ENV=production tsup",
     "dev": "tsup --watch --ignore-watch dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write .",
@@ -75,13 +78,19 @@
     "prepublishOnly": "pnpm build"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.8",
+    "@vue/test-utils": "^2.4.6",
     "eslint": "^9.37.0",
     "eslint-plugin-perfectionist": "^4.15.1",
+    "happy-dom": "^15.11.7",
     "publint": "^0.2.12",
     "terser": "^5.36.0",
     "tsup": "^8.2.4",
     "typescript": "^5.7.2",
-    "typescript-eslint": "^8.46.1"
+    "typescript-eslint": "^8.46.1",
+    "vite": "^6.0.11",
+    "vitest": "^2.1.8",
+    "vue": "^3.5.13"
   },
   "publishConfig": {
     "access": "public"
