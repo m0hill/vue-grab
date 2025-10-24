@@ -72,7 +72,7 @@ export default function Frame() {
             </div>
             <div style={{ alignItems: 'center', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'row', flexShrink: '0', gap: '3px', height: '20px', justifyContent: 'start', overflowWrap: 'break-word', paddingBlock: 0, paddingInline: 0, transformOrigin: '50% 50%', width: 'fit-content' }}>
               <div style={{ backgroundImage: 'url("https://workers.paper.design/file-assets/01K8B7DN5Q87ENAZCG11HMYXKQ/01K8B93QBHWB9G2Y6G0ZTRV539.svg")', backgroundPosition: 'center center', backgroundRepeat: 'no-repeat', backgroundSize: 'cover', boxSizing: 'border-box', flexShrink: '0', height: '10px', maxHeight: 'none', maxWidth: 'none', position: 'relative', transformOrigin: '50% 50%', width: '10px' }} />
-              <div style={{ boxSizing: 'border-box', color: '#FFDED4', flexShrink: '0', fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif', fontSize: '14px', fontSynthesis: 'none', fontWeight: 400, height: 'fit-content', lineHeight: '150%', MozOsxFontSmoothing: 'grayscale', transformOrigin: '50% 50%', WebkitFontSmoothing: 'antialiased', whiteSpace: 'pre', width: 'fit-content' }}>
+              <div style={{ boxSizing: 'border-box', color: '#ECECEC', flexShrink: '0', fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif', fontSize: '14px', fontSynthesis: 'none', fontWeight: 400, height: 'fit-content', lineHeight: '150%', MozOsxFontSmoothing: 'grayscale', transformOrigin: '50% 50%', WebkitFontSmoothing: 'antialiased', whiteSpace: 'pre', width: 'fit-content' }}>
                 Claude,
               </div>
             </div>
