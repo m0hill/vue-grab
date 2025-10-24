@@ -330,15 +330,20 @@ export const init = (options: Options = {}) => {
 
       if (stack) {
         const filteredStack = filterStack(stack);
-        const serializedStack = serializeStack(filteredStack);
-        const fullText = `${htmlSnippet}\n\nComponent owner stack:\n${serializedStack}`;
 
-        await copyTextToClipboard(
-          `\n\n<referenced_element>\n${fullText}\n</referenced_element>`,
-        ).catch(() => {});
+        if (filteredStack.length > 0) {
+          const serializedStack = serializeStack(filteredStack);
+          const fullText = `${htmlSnippet}\n\nComponent owner stack:\n${serializedStack}`;
 
-        if (resolvedOptions.adapter) {
-          resolvedOptions.adapter.open(fullText);
+          await copyTextToClipboard(
+            `\n\n<referenced_element>\n${fullText}\n</referenced_element>`,
+          ).catch(() => {});
+
+          if (resolvedOptions.adapter) {
+            resolvedOptions.adapter.open(fullText);
+          }
+        } else if (resolvedOptions.adapter) {
+          resolvedOptions.adapter.open(htmlSnippet);
         }
       } else if (resolvedOptions.adapter) {
         resolvedOptions.adapter.open(htmlSnippet);

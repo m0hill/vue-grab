@@ -1,5 +1,5 @@
 import { _fiberRoots, getFiberFromHostInstance, instrument } from "bippy";
-import { getFiberStackTrace, getOwnerStack } from "bippy/dist/source";
+import { getFiberSource, getFiberStackTrace, getOwnerStack } from "bippy/dist/source";
 
 export const fiberRoots = _fiberRoots;
 
@@ -11,7 +11,9 @@ instrument({
 
 export interface StackItem {
   componentName: string;
+  displayName?: string;
   fileName: string | undefined;
+  source?: string;
 }
 
 export const getStack = async (element: Element) => {
@@ -23,6 +25,16 @@ export const getStack = async (element: Element) => {
     componentName: item.name,
     fileName: item.source?.fileName,
   }));
+
+  if (stack.length > 0 && fiber) {
+    const fiberSource = await getFiberSource(fiber);
+    if (fiberSource) {
+      const fiberType = fiber.type as null | undefined | { displayName?: string; name?: string };
+      const displayName = fiberType?.displayName ?? fiberType?.name ?? stack[0].componentName;
+      stack[0].displayName = displayName;
+      stack[0].source = `${fiberSource.fileName}:${fiberSource.lineNumber}:${fiberSource.columnNumber}`;
+    }
+  }
 
   return stack;
 };
@@ -70,14 +82,21 @@ export const serializeStack = (stack: StackItem[]) => {
   const commonRoot = findCommonRoot(filePaths);
 
   return stack
-    .map((item) => {
+    .map((item, index) => {
       let fileName = item.fileName;
       if (fileName && commonRoot) {
         fileName = fileName.startsWith(commonRoot)
           ? fileName.substring(commonRoot.length)
           : fileName;
       }
-      return `${item.componentName}${fileName ? ` (${fileName})` : ""}`;
+      const componentName = item.displayName || item.componentName;
+      let result = `${componentName}${fileName ? ` (${fileName})` : ""}`;
+
+      if (index === 0 && item.source) {
+        result += `\n${item.source}`;
+      }
+
+      return result;
     })
     .join("\n");
 };
