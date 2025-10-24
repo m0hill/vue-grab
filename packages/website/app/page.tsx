@@ -50,8 +50,8 @@ export default function Frame() {
     };
   }, []);
   return (
-    <div style={{ alignItems: 'center', boxSizing: 'border-box', display: 'flex', justifyContent: 'center', minHeight: '100vh', width: '100%' }}>
-      <div style={{ alignItems: 'start', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'column', gap: '17px', height: 'fit-content', justifyContent: 'start', overflowWrap: 'break-word', paddingBlock: 0, paddingInline: 0, transformOrigin: '0% 0%', width: 'fit-content' }}>
+    <div style={{ alignItems: 'center', boxSizing: 'border-box', display: 'flex', justifyContent: 'center', minHeight: '100vh', width: '100%', padding: '20px' }}>
+      <div style={{ alignItems: 'start', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'column', gap: '17px', height: 'fit-content', justifyContent: 'start', overflowWrap: 'break-word', paddingBlock: 0, paddingInline: 0, transformOrigin: '0% 0%', width: '100%', maxWidth: '450px' }}>
       <div style={{ alignItems: 'start', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'column', flexShrink: '0', gap: '20px', height: 'fit-content', justifyContent: 'start', overflowWrap: 'break-word', paddingBlock: 0, paddingInline: 0, transformOrigin: '50% 50%', width: 'fit-content' }}>
         <div style={{ alignItems: 'start', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'column', flexShrink: '0', gap: '6px', height: 'fit-content', justifyContent: 'end', overflowWrap: 'break-word', paddingBlock: 0, paddingInline: 0, transformOrigin: '50% 50%', width: 'fit-content' }}>
           <div style={{ alignItems: 'center', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'row', flexShrink: '0', gap: '2px', height: '29px', justifyContent: 'space-between', overflowWrap: 'break-word', paddingBlock: 0, paddingInline: 0, transformOrigin: '50% 50%', width: 'fit-content' }}>
@@ -60,8 +60,8 @@ export default function Frame() {
               React Grab
             </div>
           </div>
-          <div style={{ alignItems: 'center', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'row', flexShrink: '0', gap: 5, height: 'fit-content', justifyContent: 'start', overflowWrap: 'break-word', paddingBlock: 0, paddingInline: 0, transformOrigin: '50% 50%', width: 'fit-content' }}>
-            <div style={{ boxSizing: 'border-box', color: '#9D9D9D', flexShrink: '0', fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif', fontSize: '14px', fontSynthesis: 'none', fontWeight: 400, height: '20px', lineHeight: '150%', MozOsxFontSmoothing: 'grayscale', transformOrigin: '50% 50%', WebkitFontSmoothing: 'antialiased', whiteSpace: 'pre', width: 'fit-content' }}>
+          <div style={{ alignItems: 'center', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'row', flexShrink: '0', gap: 5, height: 'fit-content', justifyContent: 'start', overflowWrap: 'break-word', paddingBlock: 0, paddingInline: 0, transformOrigin: '50% 50%', width: '100%', flexWrap: 'wrap' }}>
+            <div style={{ boxSizing: 'border-box', color: '#9D9D9D', flexShrink: '0', fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif', fontSize: '14px', fontSynthesis: 'none', fontWeight: 400, lineHeight: '150%', MozOsxFontSmoothing: 'grayscale', transformOrigin: '50% 50%', WebkitFontSmoothing: 'antialiased', whiteSpace: 'nowrap', width: 'fit-content' }}>
               Copy elements on your app & as context for
             </div>
             <div style={{ alignItems: 'center', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'row', flexShrink: '0', gap: '4px', height: '20px', justifyContent: 'start', overflowWrap: 'break-word', paddingBlock: 0, paddingInline: 0, transformOrigin: '50% 50%', width: 'fit-content' }}>
@@ -81,7 +81,7 @@ export default function Frame() {
             </div>
           </div>
         </div>
-        <div style={{ alignItems: 'start', borderColor: '#6F0064', borderStyle: 'solid', borderWidth: '1px', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'column', flexShrink: '0', gap: 0, height: 'fit-content', justifyContent: 'start', overflowWrap: 'break-word', paddingBlock: '6px', paddingInline: '11px', transformOrigin: '50% 50%', width: '180px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ alignItems: 'start', borderColor: '#6F0064', borderStyle: 'solid', borderWidth: '1px', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'column', flexShrink: '0', gap: 0, height: 'fit-content', justifyContent: 'start', overflowWrap: 'break-word', paddingBlock: '6px', paddingInline: '11px', transformOrigin: '50% 50%', width: '100%', maxWidth: '180px', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, background: isHolding ? 'rgba(143, 0, 119, 0.1)' : 'transparent', border: isHolding ? '0.3px solid #8F0077' : '0px solid transparent', width: isHolding ? '100%' : '0%', transition: isHolding ? 'width 0.5s linear, border 0s' : 'width 0.2s ease-out, border 0s' }} />
           <div style={{ alignItems: 'center', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'row', flexShrink: '0', height: '20px', justifyContent: 'space-between', overflowWrap: 'break-word', paddingBlock: 0, paddingInline: 0, transformOrigin: '50% 50%', width: '100%', position: 'relative' }}>
             <div style={{ boxSizing: 'border-box', color: '#FFCDF4', flexShrink: '0', fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif', fontSize: '14px', fontSynthesis: 'none', fontWeight: 400, lineHeight: '150%', MozOsxFontSmoothing: 'grayscale', transformOrigin: '50% 50%', WebkitFontSmoothing: 'antialiased', whiteSpace: 'nowrap', width: '55px' }}>
@@ -92,11 +92,11 @@ export default function Frame() {
             </div>
           </div>
         </div>
-        <div style={{ boxSizing: 'border-box', color: '#9D9D9D', flexShrink: '0', fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif', fontSize: '14px', fontSynthesis: 'none', fontWeight: 400, height: '74px', lineHeight: '176%', MozOsxFontSmoothing: 'grayscale', transformOrigin: '50% 50%', WebkitFontSmoothing: 'antialiased', whiteSpace: 'pre-wrap', width: '402px' }}>
+        <div style={{ boxSizing: 'border-box', color: '#9D9D9D', flexShrink: '0', fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif', fontSize: '14px', fontSynthesis: 'none', fontWeight: 400, lineHeight: '176%', MozOsxFontSmoothing: 'grayscale', transformOrigin: '50% 50%', WebkitFontSmoothing: 'antialiased', whiteSpace: 'pre-wrap', width: '100%', maxWidth: '402px' }}>
           Previously, it was hard to pinpoint exactly what element you were talking about. Context switching made it hard to make pinpoint changes to your site:
         </div>
       </div>
-      <div style={{ alignItems: 'start', borderColor: '#212121', borderStyle: 'solid', borderWidth: '1px', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'row', flexShrink: '0', gap: 67, height: 'fit-content', justifyContent: 'center', overflowWrap: 'break-word', paddingBlock: '13px', paddingInline: '20px', transformOrigin: '50% 50%', width: '389px' }}>
+      <div style={{ alignItems: 'start', borderColor: '#212121', borderStyle: 'solid', borderWidth: '1px', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'row', flexShrink: '0', gap: 'clamp(20px, 5vw, 67px)', height: 'fit-content', justifyContent: 'center', overflowWrap: 'break-word', paddingBlock: '13px', paddingInline: '20px', transformOrigin: '50% 50%', width: '100%', maxWidth: '389px' }}>
         <div style={{ alignItems: 'start', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'column', flexShrink: '0', gap: 0, height: 'fit-content', justifyContent: 'start', overflowWrap: 'break-word', padding: '42px 0px 0px', paddingBottom: '0px', paddingLeft: 0, paddingRight: 0, paddingTop: '42px', transformOrigin: '50% 50%', width: 'fit-content' }}>
           <div style={{ alignItems: 'start', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'column', flexShrink: '0', gap: '6px', height: 'fit-content', justifyContent: 'center', overflowWrap: 'break-word', paddingBlock: 0, paddingInline: 0, transformOrigin: '50% 50%', width: 'fit-content' }}>
             <div style={{ boxSizing: 'border-box', color: '#9D9D9D', flexShrink: '0', fontFamily: '"EKModenaMono-Regular", "EK Modena Mono", system-ui, sans-serif', fontSize: '11px', fontSynthesis: 'none', fontWeight: 400, height: '16px', lineHeight: '171%', MozOsxFontSmoothing: 'grayscale', transformOrigin: '50% 50%', WebkitFontSmoothing: 'antialiased', whiteSpace: 'pre', width: 'fit-content' }}>
@@ -137,7 +137,7 @@ export default function Frame() {
             </div>
           </div>
         </div>
-        <div style={{ boxSizing: 'border-box', color: '#9D9D9D', flexShrink: '0', fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif', fontSize: '14px', fontSynthesis: 'none', fontWeight: 400, height: '65px', lineHeight: '176%', MozOsxFontSmoothing: 'grayscale', transformOrigin: '50% 50%', WebkitFontSmoothing: 'antialiased', whiteSpace: 'pre', width: 'fit-content' }}>
+        <div style={{ boxSizing: 'border-box', color: '#9D9D9D', flexShrink: '0', fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif', fontSize: '14px', fontSynthesis: 'none', fontWeight: 400, lineHeight: '176%', MozOsxFontSmoothing: 'grayscale', transformOrigin: '50% 50%', WebkitFontSmoothing: 'antialiased', whiteSpace: 'pre-wrap', width: '100%' }}>
           {"• Hold ⌘C and click to grab the element \n• Use with any tool you want: Cursor, Claude Code, OpenCode\n• Just a single script tag (it's just JavaScript!)"}
         </div>
       </div>
