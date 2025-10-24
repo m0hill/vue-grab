@@ -1,5 +1,11 @@
 # vue-grab
 
+## 0.0.3
+
+### Patch Changes
+
+- Minor documentation updates
+
 ## 0.0.2
 
 ### Patch Changes
