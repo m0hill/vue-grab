@@ -324,8 +324,6 @@ export const init = (options: Options = {}) => {
         `\n\n<referenced_element>\n${htmlSnippet}\n</referenced_element>`,
       );
 
-      cleanupIndicator(tagName);
-
       const stack = await getStack(element);
 
       if (stack) {
@@ -348,6 +346,8 @@ export const init = (options: Options = {}) => {
       } else if (resolvedOptions.adapter) {
         resolvedOptions.adapter.open(htmlSnippet);
       }
+
+      cleanupIndicator(tagName);
     } catch {
       cleanupIndicator(tagName);
     }
