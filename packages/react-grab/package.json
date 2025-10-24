@@ -1,8 +1,18 @@
 {
   "name": "react-grab",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "",
-  "keywords": [],
+  "keywords": [
+    "react",
+    "grab",
+    "cursor",
+    "claude",
+    "code",
+    "context",
+    "changes",
+    "modifications",
+    "modification"
+  ],
   "homepage": "https://github.com/aidenybai/react-grab#readme",
   "bugs": {
     "url": "https://github.com/aidenybai/react-grab/issues"
@@ -77,6 +87,6 @@
     "access": "public"
   },
   "dependencies": {
-    "bippy": "^0.3.31"
+    "bippy": "^0.3.32"
   }
 }
