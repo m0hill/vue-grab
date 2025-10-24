@@ -4,6 +4,8 @@
 [![version](https://img.shields.io/npm/v/react-grab?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/react-grab)
 [![downloads](https://img.shields.io/npm/dt/react-grab.svg?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/react-grab)
 
+> [**Install in Cursor**](cursor://anysphere.cursor-deeplink/prompt?text=These+are+the+installation+instructions+for+React+Grab.+Follow+the+instructions+to+install+%28based+on+the+framework+used+in+this+codebase%29%0A%0Ahttps%3A%2F%2Fraw.githubusercontent.com%2Faidenybai%2Freact-grab%2Frefs%2Fheads%2Fmain%2FREADME.md)
+
 Grab any element on in your app and give it to Cursor, Claude Code, etc. to change.
 
 By default coding agents cannot access elements on your page. React Grab fixes this - just point and click to provide context!
@@ -17,6 +19,8 @@ By default coding agents cannot access elements on your page. React Grab fixes t
 ![React Grab Demo](https://react-grab.com/demo.gif)
 
 ## Install
+
+> [**Install in Cursor**](cursor://anysphere.cursor-deeplink/prompt?text=These+are+the+installation+instructions+for+React+Grab.+Follow+the+instructions+to+install+%28based+on+the+framework+used+in+this+codebase%29%0A%0Ahttps%3A%2F%2Fraw.githubusercontent.com%2Faidenybai%2Freact-grab%2Frefs%2Fheads%2Fmain%2FREADME.md)
 
 Get started in 1 minute by adding this script tag to your app:
 
