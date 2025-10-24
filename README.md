@@ -1,47 +1,22 @@
-# <img src="https://react-grab.com/favicon.png" width="60" align="center" /> react-grab
+# <img src="https://react-grab.com/logo.svg" width="60" align="center" /> React Grab
 
 [![size](https://img.shields.io/bundlephobia/minzip/react-grab?label=gzip&style=flat&colorA=000000&colorB=000000)](https://bundlephobia.com/package/react-grab)
 [![version](https://img.shields.io/npm/v/react-grab?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/react-grab)
 [![downloads](https://img.shields.io/npm/dt/react-grab.svg?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/react-grab)
 
-react-grab is a toolkit to **hack into react internals**
+Copy elements on your app and as context for Cursor, Claude Code, etc.
 
-by default, you cannot access react internals. bippy bypasses this by "pretending" to be react devtools, giving you access to the fiber tree and other internals.
+By default, Cursor, Claude Code, etc. cannot access elements on your page. React Grab allows you to tell them what part of your app you want to change.
 
-- works outside of react – no react code modification needed
-- utility functions that work across modern react (v17-19)
-- no prior react source code knowledge required
+With React Grab:
 
-```jsx
-import { onCommitFiberRoot, traverseFiber } from "bippy"; // must be imported BEFORE react
+- Hold <kbd>⌘C</kbd> and click on any element on your page
+- Works with Cursor, Claude Code, OpenCode
+- Just a single script tag (it’s just JavaScript!)
 
-onCommitFiberRoot((root) => {
-  traverseFiber(root.current, (fiber) => {
-    // prints every fiber in the current React tree
-    console.log("fiber:", fiber);
-  });
-});
-```
+### Next.js (App router)
 
-# react-grab
-
-Inspect React components and copy their source file paths to clipboard.
-
-## Install
-
-```bash
-npm install react-grab
-# or
-pnpm add react-grab
-# or
-yarn add react-grab
-```
-
-## Usage
-
-### Next.js (App Router)
-
-Add to your `app/layout.tsx`:
+Add this inside of your `app/layout.tsx`:
 
 ```jsx
 import Script from "next/script";
@@ -50,13 +25,16 @@ export default function RootLayout({ children }) {
   return (
     <html>
       <head>
+        {/* put this in the <head> */}
         {process.env.NODE_ENV === "development" && (
           <Script
-            src="//unpkg.com/react-grab@0.0.7/dist/index.global.js"
+            src="//unpkg.com/react-grab/dist/index.global.js"
             crossOrigin="anonymous"
             strategy="beforeInteractive"
+            data-enabled="true"
           />
         )}
+        {/* rest of your scripts go under */}
       </head>
       <body>{children}</body>
     </html>
@@ -64,8 +42,57 @@ export default function RootLayout({ children }) {
 }
 ```
 
-### How it works
+### Next.js (Pages router)
 
-1. Hold **Cmd** (Mac) for ~1 second to activate
-2. Hover over any element on the page
-3. Click to copy component stack trace and HTML to clipboard
+Add this into your `pages/_document.tsx`:
+
+```jsx
+import { Html, Head, Main, NextScript } from "next/document";
+
+export default function Document() {
+  return (
+    <Html lang="en">
+      <Head>
+        {/* put this in the <Head> */}
+        {process.env.NODE_ENV === "development" && (
+          <Script
+            src="//unpkg.com/react-grab/dist/index.global.js"
+            crossOrigin="anonymous"
+            strategy="beforeInteractive"
+            data-enabled="true"
+          />
+        )}
+        {/* rest of your scripts go under */}
+      </Head>
+      <body>
+        <Main />
+        <NextScript />
+      </body>
+    </Html>
+  );
+}
+```
+
+### Vite
+
+Add this into your root `vite.config.ts`:
+
+```ts
+// ...
+import { reactGrab } from "react-grab/plugins/vite";
+
+export default defineConfig({
+  plugins: [
+    // add react grab as a plugin
+    reactGrab(),
+  ],
+});
+```
+
+### Script tag
+
+Add this anywhere in your app:
+
+```html
+<script src="//unpkg.com/react-grab/dist/index.global.js" crossorigin="anonymous" data-enabled="true"></script>
+```

@@ -29,6 +29,16 @@
         "default": "./dist/index.cjs"
       }
     },
+    "./plugins/vite": {
+      "import": {
+        "types": "./dist/plugins/vite.d.ts",
+        "default": "./dist/plugins/vite.js"
+      },
+      "require": {
+        "types": "./dist/plugins/vite.d.cts",
+        "default": "./dist/plugins/vite.cjs"
+      }
+    },
     "./dist/*": "./dist/*.js",
     "./dist/*.js": "./dist/*.js",
     "./dist/*.cjs": "./dist/*.cjs",

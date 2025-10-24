@@ -1,3 +1,4 @@
+import { Adapter, cursorAdapter } from "./adapters.js";
 import {
   Hotkey,
   isKeyPressed,
@@ -25,8 +26,19 @@ import { isElementVisible } from "./utils/is-element-visible.js";
 import { ATTRIBUTE_NAME, mountRoot } from "./utils/mount-root.js";
 import { createStore } from "./utils/store.js";
 
+export { cursorAdapter } from "./adapters.js";
+export type { Adapter } from "./adapters.js";
+
+import { detectReactBuildType, getRDTHook } from "bippy";
+
 export interface Options {
+  /**
+   * adapter to open the prompt in an external tool
+   */
+  adapter?: Adapter;
+
   enabled?: boolean;
+
   /**
    * hotkey to trigger the overlay
    *
@@ -63,9 +75,10 @@ export const init = (options: Options = {}) => {
     return;
   }
 
-  const resolvedOptions: Required<Options> = {
+  const resolvedOptions = {
+    adapter: undefined,
     enabled: true,
-    hotkey: ["Meta", "C"],
+    hotkey: ["Meta", "C"] as Hotkey | Hotkey[],
     keyHoldDuration: 500,
     ...options,
   };
@@ -196,14 +209,14 @@ export const init = (options: Options = {}) => {
           }));
           stopProgressTracking();
           cleanupActivationHotkeyWatcher = null;
-        }
+        },
       );
     }
   };
 
   const cleanupKeyStateChangeSubscription = libStore.subscribe(
     handleKeyStateChange,
-    (state) => state.pressedKeys
+    (state) => state.pressedKeys,
   );
 
   let mouseMoveScheduled = false;
@@ -310,7 +323,7 @@ export const init = (options: Options = {}) => {
       const htmlSnippet = getHTMLSnippet(element);
 
       await copyTextToClipboard(
-        `\n\n<referenced_element>\n${htmlSnippet}\n</referenced_element>`
+        `\n\n<referenced_element>\n${htmlSnippet}\n</referenced_element>`,
       );
 
       cleanupIndicator(tagName);
@@ -323,9 +336,14 @@ export const init = (options: Options = {}) => {
         const fullText = `${htmlSnippet}\n\nComponent owner stack:\n${serializedStack}`;
 
         await copyTextToClipboard(
-          `\n\n<referenced_element>\n${fullText}\n</referenced_element>`
-        ).catch(() => {
-        });
+          `\n\n<referenced_element>\n${fullText}\n</referenced_element>`,
+        ).catch(() => {});
+
+        if (resolvedOptions.adapter) {
+          resolvedOptions.adapter.open(fullText);
+        }
+      } else if (resolvedOptions.adapter) {
+        resolvedOptions.adapter.open(htmlSnippet);
       }
     } catch {
       cleanupIndicator(tagName);
@@ -469,13 +487,30 @@ export const init = (options: Options = {}) => {
 
 if (typeof window !== "undefined" && typeof document !== "undefined") {
   const currentScript = document.currentScript;
-  let options: Options = {};
-  if (currentScript) {
-    const maybeOptions = currentScript.getAttribute("data-options");
-    if (maybeOptions) {
-      try {
-        options = JSON.parse(maybeOptions) as Options;
-      } catch {}
+  const options: Options = {};
+  if (currentScript?.dataset) {
+    const { adapter, enabled, hotkey, keyHoldDuration } = currentScript.dataset;
+
+    if (adapter !== undefined) {
+      if (adapter === "cursor") {
+        options.adapter = cursorAdapter;
+      }
+    }
+
+    if (enabled !== undefined) {
+      options.enabled = enabled === "true";
+    }
+
+    if (hotkey !== undefined) {
+      const keys = hotkey.split(",").map((key) => key.trim());
+      options.hotkey = keys.length === 1 ? keys[0] : keys;
+    }
+
+    if (keyHoldDuration !== undefined) {
+      const duration = Number(keyHoldDuration);
+      if (!Number.isNaN(duration)) {
+        options.keyHoldDuration = duration;
+      }
     }
   }
   init(options);

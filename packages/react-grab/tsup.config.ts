@@ -29,10 +29,7 @@ const DEFAULT_OPTIONS: Options = {
     ".css": "text",
   },
   minify: false,
-  onSuccess:
-    process.env.NODE_ENV !== "production"
-      ? "pbcopy < ./dist/index.global.js"
-      : undefined,
+  onSuccess: process.env.COPY ? "pbcopy < ./dist/index.global.js" : undefined,
   outDir: "./dist",
   platform: "browser",
   sourcemap: false,
@@ -52,5 +49,13 @@ export default defineConfig([
     },
     minify: process.env.NODE_ENV === "production",
     outDir: "./dist",
+  },
+  {
+    ...DEFAULT_OPTIONS,
+    dts: true,
+    entry: ["./src/plugins/vite.ts"],
+    format: ["esm", "cjs"],
+    onSuccess: undefined,
+    outDir: "./dist/plugins",
   },
 ]);

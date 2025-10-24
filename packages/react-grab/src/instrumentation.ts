@@ -33,7 +33,7 @@ export const filterStack = (stack: StackItem[]) => {
       item.fileName &&
       !item.fileName.includes("node_modules") &&
       item.componentName.length > 1 &&
-      !item.fileName.startsWith("_")
+      !item.fileName.startsWith("_"),
   );
 };
 
@@ -103,7 +103,7 @@ export const getHTMLSnippet = (element: Element) => {
       if (classes && classes.length > 0) return true;
     }
     return Array.from(el.attributes).some((attr) =>
-      attr.name.startsWith("data-")
+      attr.name.startsWith("data-"),
     );
   };
 
@@ -187,7 +187,7 @@ export const getHTMLSnippet = (element: Element) => {
     }
 
     const dataAttrs = Array.from(el.attributes).filter((attr) =>
-      attr.name.startsWith("data-")
+      attr.name.startsWith("data-"),
     );
     const displayDataAttrs = compact ? dataAttrs.slice(0, 1) : dataAttrs;
     for (const attr of displayDataAttrs) {
@@ -267,7 +267,7 @@ export const getHTMLSnippet = (element: Element) => {
         lines.push(
           `${indent}  ... (${targetIndex} element${
             targetIndex === 1 ? "" : "s"
-          })`
+          })`,
         );
       }
     }
@@ -282,8 +282,8 @@ export const getHTMLSnippet = (element: Element) => {
   if (textContent && childrenCount === 0 && textContent.length < 40) {
     lines.push(
       `${indent}  ${getElementTag(element)}${textContent}${getClosingTag(
-        element
-      )}`
+        element,
+      )}`,
     );
   } else {
     lines.push(indent + "  " + getElementTag(element));
@@ -294,7 +294,7 @@ export const getHTMLSnippet = (element: Element) => {
       lines.push(
         `${indent}    ... (${childrenCount} element${
           childrenCount === 1 ? "" : "s"
-        })`
+        })`,
       );
     }
     lines.push(indent + "  " + getClosingTag(element));
@@ -313,7 +313,7 @@ export const getHTMLSnippet = (element: Element) => {
         lines.push(
           `${indent}  ... (${siblingsAfter} element${
             siblingsAfter === 1 ? "" : "s"
-          })`
+          })`,
         );
       }
     }
