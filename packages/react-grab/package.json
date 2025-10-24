@@ -56,7 +56,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "NODE_ENV=production tsup",
     "dev": "tsup --watch --ignore-watch dist",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",

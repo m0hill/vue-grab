@@ -4,11 +4,9 @@
 [![version](https://img.shields.io/npm/v/react-grab?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/react-grab)
 [![downloads](https://img.shields.io/npm/dt/react-grab.svg?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/react-grab)
 
-Copy elements on your app and as context for Cursor, Claude Code, etc.
+Grab any element on in your app and give it to Cursor, Claude Code, etc. to change.
 
-By default, Cursor, Claude Code, etc. cannot access elements on your page. React Grab allows you to tell them what part of your app you want to change.
-
-With React Grab:
+By default coding agents cannot access elements on your page. React Grab fixes this - just point and click to provide context!
 
 - Hold <kbd>⌘C</kbd> and click on any element on your page
 - Works with Cursor, Claude Code, OpenCode
@@ -16,9 +14,19 @@ With React Grab:
 
 ### [Try out a demo! →](https://react-grab.com)
 
-### Install
+## Install
 
-Installation takes less than 1 minute.
+Get started in 1 minute by adding this script tag to your app:
+
+```html
+<script
+  src="//unpkg.com/react-grab/dist/index.global.js"
+  crossorigin="anonymous"
+  data-enabled="true"
+></script>
+```
+
+If you're using a React framework or build tool, view instructions below:
 
 #### Next.js (App router)
 
@@ -81,7 +89,8 @@ export default function Document() {
 
 #### Vite
 
-Add this into your root `vite.config.ts`:
+1. Run `npm i react-grab@latest`
+2. Add this to your `vite.config.ts`:
 
 ```ts
 // ...
@@ -95,25 +104,13 @@ export default defineConfig({
 });
 ```
 
-#### Script tag
-
-Add this anywhere in your app:
-
-```html
-<script
-  src="//unpkg.com/react-grab/dist/index.global.js"
-  crossorigin="anonymous"
-  data-enabled="true"
-></script>
-```
-
 ## Resources & Contributing Back
 
 Want to try it out? Check the [our demo](https://react-grab.com).
 
 Looking to contribute back? Check the [Contributing Guide](https://github.com/aidenybai/react-grab/blob/main/CONTRIBUTING.md) out.
 
-Want to talk to the community? Hop in our [Discord](https://discord.com/invite/G7zxfUzkm7) and share your ideas and what you've build with React Scan.
+Want to talk to the community? Hop in our [Discord](https://discord.com/invite/G7zxfUzkm7) and share your ideas and what you've build with React Grab.
 
 Find a bug? Head over to our [issue tracker](https://github.com/aidenybai/react-grab/issues) and we'll do our best to help. We love pull requests, too!
 
@@ -123,4 +120,4 @@ We expect all contributors to abide by the terms of our [Code of Conduct](https:
 
 ### License
 
-React Scan is MIT-licensed open-source software by Aiden Bai, Million Software, Inc., and contributors.
+React Grab is MIT-licensed open-source software.
