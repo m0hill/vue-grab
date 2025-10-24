@@ -50,7 +50,7 @@ export default function Frame() {
     };
   }, []);
   return (
-    <div style={{ alignItems: 'center', boxSizing: 'border-box', display: 'flex', justifyContent: 'center', minHeight: '100vh', width: '100%', padding: '20px' }}>
+    <div style={{ alignItems: 'flex-start', boxSizing: 'border-box', display: 'flex', justifyContent: 'center', minHeight: '100vh', width: '100%', padding: '80px 20px 20px' }}>
       <div style={{ alignItems: 'start', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'column', gap: '17px', height: 'fit-content', justifyContent: 'start', overflowWrap: 'break-word', paddingBlock: 0, paddingInline: 0, transformOrigin: '0% 0%', width: '100%', maxWidth: '450px' }}>
       <div style={{ alignItems: 'start', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'column', flexShrink: '0', gap: '20px', height: 'fit-content', justifyContent: 'start', overflowWrap: 'break-word', paddingBlock: 0, paddingInline: 0, transformOrigin: '50% 50%', width: 'fit-content' }}>
         <div style={{ alignItems: 'start', boxSizing: 'border-box', contain: 'layout', display: 'flex', flexDirection: 'column', flexShrink: '0', gap: '6px', height: 'fit-content', justifyContent: 'end', overflowWrap: 'break-word', paddingBlock: 0, paddingInline: 0, transformOrigin: '50% 50%', width: 'fit-content' }}>
