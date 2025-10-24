@@ -1,5 +1,9 @@
 # Vue Grab
 
+[![size](https://img.shields.io/bundlephobia/minzip/vue-grab?label=gzip&style=flat&colorA=000000&colorB=000000)](https://bundlephobia.com/package/vue-grab)
+[![version](https://img.shields.io/npm/v/vue-grab?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/vue-grab)
+[![downloads](https://img.shields.io/npm/dt/vue-grab.svg?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/vue-grab)
+
 > A Vue port of [React Grab](https://github.com/aidenybai/react-grab) by Aiden Bai
 
 Grab any element in your Vue app and give it to Cursor, Claude Code, etc. to change.
@@ -10,6 +14,8 @@ By default coding agents cannot access elements on your page. Vue Grab fixes thi
 - Works with Cursor, Claude Code, OpenCode
 - Just a single script tag (it's just JavaScript!)
 - Shows Vue component hierarchy and file paths
+
+### [Try out a demo! →](https://vue-grab.mohil.dev)
 
 ## Install
 
