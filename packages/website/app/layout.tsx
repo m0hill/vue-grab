@@ -51,16 +51,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* eslint-disable-next-line @next/next/inline-script-id */}
-        <Script>
-          {`
-            fetch('/bundle.js')
-              .then(response => response.text())
-              .then(text => {
-                eval(text);
-              });
-          `}
-        </Script>
+        <Script
+          src="https://unpkg.com/react-grab/dist/index.global.js"
+          crossOrigin="anonymous"
+          strategy="beforeInteractive"
+          data-enabled="true"
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
