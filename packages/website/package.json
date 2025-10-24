@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@shikijs/transformers": "^3.13.0",
     "@vercel/analytics": "^1.5.0",
     "bippy": "^0.3.31",
     "clsx": "^2.1.1",

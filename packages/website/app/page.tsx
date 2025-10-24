@@ -12,6 +12,71 @@ export default function Frame() {
   const [isHolding, setIsHolding] = useState(false);
   const [isActivated, setIsActivated] = useState(false);
   const [isHoveringButton, setIsHoveringButton] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<"app" | "pages" | "vite">("app");
+
+  const copyToClipboard = async (text: string, index: number) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
+  const codeBlocks = {
+    script: `<script
+  src="//unpkg.com/react-grab/dist/index.global.js"
+  crossorigin="anonymous"
+  data-enabled="true"
+></script>`,
+    nextAppRouter: `import Script from "next/script";
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <head>
+        {process.env.NODE_ENV === "development" && (
+          <Script
+            src="//unpkg.com/react-grab/dist/index.global.js"
+            crossOrigin="anonymous"
+            strategy="beforeInteractive"
+            data-enabled="true"
+          />
+        )}
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}`,
+    nextPagesRouter: `import { Html, Head, Main, NextScript } from "next/document";
+import Script from "next/script";
+
+export default function Document() {
+  return (
+    <Html lang="en">
+      <Head>
+        {process.env.NODE_ENV === "development" && (
+          <Script
+            src="//unpkg.com/react-grab/dist/index.global.js"
+            crossOrigin="anonymous"
+            strategy="beforeInteractive"
+            data-enabled="true"
+          />
+        )}
+      </Head>
+      <body>
+        <Main />
+        <NextScript />
+      </body>
+    </Html>
+  );
+}`,
+    vite: `import { reactGrab } from "react-grab/plugins/vite";
+
+export default defineConfig({
+  plugins: [
+    reactGrab(),
+  ],
+});`
+  };
 
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -143,12 +208,12 @@ export default function Frame() {
                   backgroundSize: "cover",
                   boxSizing: "border-box",
                   flexShrink: "0",
-                  height: "20px",
+                  height: "17px",
                   maxHeight: "none",
                   maxWidth: "none",
                   position: "relative",
                   transformOrigin: "50% 50%",
-                  width: "20px",
+                  width: "17px",
                 }}
               />
               <div
@@ -158,7 +223,7 @@ export default function Frame() {
                   flexShrink: "0",
                   fontFamily:
                     '"Enduro-Medium", "Enduro Medium", system-ui, sans-serif',
-                  fontSize: "19px",
+                  fontSize: "16px",
                   fontSynthesis: "none",
                   fontWeight: 500,
                   height: "fit-content",
@@ -417,7 +482,7 @@ export default function Frame() {
                   flexShrink: "0",
                   fontFamily:
                     '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
-                  fontSize: "14px",
+                  fontSize: "13px",
                   fontSynthesis: "none",
                   fontWeight: 400,
                   lineHeight: "150%",
@@ -437,7 +502,7 @@ export default function Frame() {
                   flexShrink: "0",
                   fontFamily:
                     '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
-                  fontSize: "14px",
+                  fontSize: "13px",
                   fontSynthesis: "none",
                   fontWeight: 400,
                   lineHeight: "150%",
@@ -995,6 +1060,622 @@ export default function Frame() {
               </div>
             </div>
           </a>
+        </div>
+        <div
+          style={{
+            alignItems: "start",
+            boxSizing: "border-box",
+            contain: "layout",
+            display: "flex",
+            flexDirection: "column",
+            flexShrink: "0",
+            gap: "12px",
+            height: "fit-content",
+            justifyContent: "start",
+            overflowWrap: "break-word",
+            paddingBlock: 0,
+            paddingInline: 0,
+            transformOrigin: "50% 50%",
+            width: "100%",
+            marginTop: "30px",
+          }}
+        >
+          <div
+            style={{
+              boxSizing: "border-box",
+              color: "#DDDDDD",
+              flexShrink: "0",
+              fontFamily:
+                '"Enduro-Medium", "Enduro Medium", system-ui, sans-serif',
+              fontSize: "16px",
+              fontSynthesis: "none",
+              fontWeight: 500,
+              lineHeight: "150%",
+              MozOsxFontSmoothing: "grayscale",
+              transformOrigin: "50% 50%",
+              WebkitFontSmoothing: "antialiased",
+              whiteSpace: "pre",
+              width: "fit-content",
+            }}
+          >
+            Install
+          </div>
+          <div
+            style={{
+              boxSizing: "border-box",
+              color: "#9D9D9D",
+              flexShrink: "0",
+              fontFamily:
+                '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+              fontSize: "14px",
+              fontSynthesis: "none",
+              fontWeight: 400,
+              lineHeight: "176%",
+              MozOsxFontSmoothing: "grayscale",
+              transformOrigin: "50% 50%",
+              WebkitFontSmoothing: "antialiased",
+              whiteSpace: "pre-wrap",
+              width: "100%",
+              maxWidth: "402px",
+            }}
+          >
+            Get started in 1 minute by adding this script tag to your app:
+          </div>
+          <div
+            style={{
+              alignItems: "start",
+              backgroundColor: "#0D0D0D",
+              borderColor: "#212121",
+              borderStyle: "solid",
+              borderWidth: "1px",
+              boxSizing: "border-box",
+              contain: "layout",
+              display: "flex",
+              flexDirection: "column",
+              flexShrink: "0",
+              gap: 0,
+              height: "fit-content",
+              justifyContent: "start",
+              overflowX: "auto",
+              paddingBlock: "12px",
+              paddingInline: "16px",
+              transformOrigin: "50% 50%",
+              width: "100%",
+              maxWidth: "402px",
+            }}
+          >
+            <div
+              style={{
+                boxSizing: "border-box",
+                color: "#C6C6C6",
+                flexShrink: "0",
+                fontFamily:
+                  '"EKModenaMono-Regular", "EK Modena Mono", system-ui, monospace',
+                fontSize: "12px",
+                fontSynthesis: "none",
+                fontWeight: 400,
+                lineHeight: "171%",
+                MozOsxFontSmoothing: "grayscale",
+                transformOrigin: "50% 50%",
+                WebkitFontSmoothing: "antialiased",
+                whiteSpace: "pre",
+                width: "fit-content",
+              }}
+            >
+              <span style={{ color: "#9f9f9f" }}>&lt;</span>
+              <span style={{ color: "#ffa0f3" }}>script</span>
+              {"\n  "}
+              <span style={{ color: "#ffa0f3" }}>src</span>
+              <span style={{ color: "#9f9f9f" }}>=</span>
+              <span style={{ color: "#99FFE4" }}>&quot;//unpkg.com/react-grab/dist/index.global.js&quot;</span>
+              {"\n  "}
+              <span style={{ color: "#ffa0f3" }}>crossorigin</span>
+              <span style={{ color: "#9f9f9f" }}>=</span>
+              <span style={{ color: "#99FFE4" }}>&quot;anonymous&quot;</span>
+              {"\n  "}
+              <span style={{ color: "#ffa0f3" }}>data-enabled</span>
+              <span style={{ color: "#9f9f9f" }}>=</span>
+              <span style={{ color: "#99FFE4" }}>&quot;true&quot;</span>
+              {"\n"}
+              <span style={{ color: "#9f9f9f" }}>&gt;&lt;/</span>
+              <span style={{ color: "#ffa0f3" }}>script</span>
+              <span style={{ color: "#9f9f9f" }}>&gt;</span>
+            </div>
+          </div>
+          <button
+            onClick={() => copyToClipboard(codeBlocks.script, 0)}
+            style={{
+              padding: "4px 10px",
+              backgroundColor: copiedIndex === 0 ? "#2A2A2A" : "transparent",
+              border: "1px solid #2A2A2A",
+              color: "#9D9D9D",
+              fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+              fontSize: "11px",
+              cursor: "pointer",
+              transition: "background-color 0.2s ease",
+              marginTop: "4px",
+            }}
+            onMouseEnter={(e) => {
+              if (copiedIndex !== 0) e.currentTarget.style.backgroundColor = "#2A2A2A";
+            }}
+            onMouseLeave={(e) => {
+              if (copiedIndex !== 0) e.currentTarget.style.backgroundColor = "transparent";
+            }}
+          >
+            {copiedIndex === 0 ? "Copied!" : "Copy code"}
+          </button>
+          <div
+            style={{
+              boxSizing: "border-box",
+              color: "#9D9D9D",
+              flexShrink: "0",
+              fontFamily:
+                '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+              fontSize: "14px",
+              fontSynthesis: "none",
+              fontWeight: 400,
+              lineHeight: "176%",
+              MozOsxFontSmoothing: "grayscale",
+              transformOrigin: "50% 50%",
+              WebkitFontSmoothing: "antialiased",
+              whiteSpace: "pre-wrap",
+              width: "100%",
+              maxWidth: "402px",
+              marginTop: "16px",
+            }}
+          >
+            If you&apos;re using a React framework or build tool:
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: "8px",
+              marginTop: "12px",
+              borderBottom: "1px solid #212121",
+              paddingBottom: "8px",
+              width: "100%",
+              maxWidth: "402px",
+            }}
+          >
+            <button
+              onClick={() => setActiveTab("app")}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: "transparent",
+                border: "1px solid " + (activeTab === "app" ? "#9D9D9D" : "#2A2A2A"),
+                color: activeTab === "app" ? "#DDDDDD" : "#9D9D9D",
+                fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+                fontSize: "12px",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+            >
+              Next.js App
+            </button>
+            <button
+              onClick={() => setActiveTab("pages")}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: "transparent",
+                border: "1px solid " + (activeTab === "pages" ? "#9D9D9D" : "#2A2A2A"),
+                color: activeTab === "pages" ? "#DDDDDD" : "#9D9D9D",
+                fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+                fontSize: "12px",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+            >
+              Next.js Pages
+            </button>
+            <button
+              onClick={() => setActiveTab("vite")}
+              style={{
+                padding: "4px 12px",
+                backgroundColor: "transparent",
+                border: "1px solid " + (activeTab === "vite" ? "#9D9D9D" : "#2A2A2A"),
+                color: activeTab === "vite" ? "#DDDDDD" : "#9D9D9D",
+                fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+                fontSize: "12px",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+            >
+              Vite
+            </button>
+          </div>
+          <div
+            style={{
+              alignItems: "start",
+              boxSizing: "border-box",
+              contain: "layout",
+              display: "flex",
+              flexDirection: "column",
+              flexShrink: "0",
+              gap: "8px",
+              height: "fit-content",
+              justifyContent: "start",
+              overflowWrap: "break-word",
+              paddingBlock: 0,
+              paddingInline: 0,
+              transformOrigin: "50% 50%",
+              width: "100%",
+              maxWidth: "402px",
+              marginTop: "12px",
+            }}
+          >
+            {activeTab === "app" && (
+            <>
+              <div
+                style={{
+                  boxSizing: "border-box",
+                  color: "#DDDDDD",
+                  flexShrink: "0",
+                  fontFamily:
+                    '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+                  fontSize: "14px",
+                  fontSynthesis: "none",
+                  fontWeight: 500,
+                  lineHeight: "150%",
+                  MozOsxFontSmoothing: "grayscale",
+                  transformOrigin: "50% 50%",
+                  WebkitFontSmoothing: "antialiased",
+                  whiteSpace: "pre",
+                  width: "fit-content",
+                }}
+              >
+                Next.js (App Router)
+              </div>
+              <div
+                style={{
+                  boxSizing: "border-box",
+                  color: "#9D9D9D",
+                  flexShrink: "0",
+                  fontFamily:
+                    '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+                  fontSize: "14px",
+                  fontSynthesis: "none",
+                  fontWeight: 400,
+                  lineHeight: "176%",
+                  MozOsxFontSmoothing: "grayscale",
+                  transformOrigin: "50% 50%",
+                  WebkitFontSmoothing: "antialiased",
+                  whiteSpace: "pre-wrap",
+                  width: "100%",
+                }}
+              >
+                Add this inside of your app/layout.tsx:
+              </div>
+              <div
+                style={{
+                  alignItems: "start",
+                  backgroundColor: "#0D0D0D",
+                  borderColor: "#212121",
+                  borderStyle: "solid",
+                  borderWidth: "1px",
+                  boxSizing: "border-box",
+                  contain: "layout",
+                  display: "flex",
+                  flexDirection: "column",
+                  flexShrink: "0",
+                  gap: 0,
+                  height: "fit-content",
+                  justifyContent: "start",
+                  overflowX: "auto",
+                  paddingBlock: "12px",
+                  paddingInline: "16px",
+                  transformOrigin: "50% 50%",
+                  width: "100%",
+                }}
+              >
+                <div
+                  style={{
+                    boxSizing: "border-box",
+                    color: "#C6C6C6",
+                    flexShrink: "0",
+                    fontFamily:
+                      '"EKModenaMono-Regular", "EK Modena Mono", system-ui, monospace',
+                    fontSize: "11px",
+                    fontSynthesis: "none",
+                    fontWeight: 400,
+                    lineHeight: "171%",
+                    MozOsxFontSmoothing: "grayscale",
+                    transformOrigin: "50% 50%",
+                    WebkitFontSmoothing: "antialiased",
+                    whiteSpace: "pre",
+                    width: "fit-content",
+                  }}
+                >
+                    <span style={{ color: "#ffa0f3" }}>import</span> Script <span style={{ color: "#ffa0f3" }}>from</span> <span style={{ color: "#99FFE4" }}>&quot;next/script&quot;</span>;{"\n\n"}
+                  <span style={{ color: "#ffa0f3" }}>export</span> <span style={{ color: "#ffa0f3" }}>default</span> <span style={{ color: "#ffa0f3" }}>function</span> <span style={{ color: "#FFD494" }}>RootLayout</span>{"("}{"{"} children {"}"}{") "}{"{\n"}
+                  {"  "}<span style={{ color: "#ffa0f3" }}>return</span> {"(\n"}
+                  {"    "}<span style={{ color: "#9f9f9f" }}>&lt;</span><span style={{ color: "#ffa0f3" }}>html</span><span style={{ color: "#9f9f9f" }}>&gt;</span>{"\n"}
+                  {"      "}<span style={{ color: "#9f9f9f" }}>&lt;</span><span style={{ color: "#ffa0f3" }}>head</span><span style={{ color: "#9f9f9f" }}>&gt;</span>{"\n"}
+                  {"        "}{"{"}<span style={{ color: "#ffa0f3" }}>process</span>.env.NODE_ENV === <span style={{ color: "#99FFE4" }}>&quot;development&quot;</span> && {"(\n"}
+                  {"          "}<span style={{ color: "#9f9f9f" }}>&lt;</span><span style={{ color: "#ffa0f3" }}>Script</span>{"\n"}
+                  {"            "}<span style={{ color: "#FFD494" }}>src</span>=<span style={{ color: "#99FFE4" }}>&quot;//unpkg.com/react-grab/dist/index.global.js&quot;</span>{"\n"}
+                  {"            "}<span style={{ color: "#FFD494" }}>crossOrigin</span>=<span style={{ color: "#99FFE4" }}>&quot;anonymous&quot;</span>{"\n"}
+                  {"            "}<span style={{ color: "#FFD494" }}>strategy</span>=<span style={{ color: "#99FFE4" }}>&quot;beforeInteractive&quot;</span>{"\n"}
+                  {"            "}<span style={{ color: "#FFD494" }}>data-enabled</span>=<span style={{ color: "#99FFE4" }}>&quot;true&quot;</span>{"\n"}
+                  {"          "}<span style={{ color: "#9f9f9f" }}>{"/>"}</span>{"\n"}
+                  {"        "}{")"}{"}"}
+                  {"\n"}
+                  {"      "}<span style={{ color: "#9f9f9f" }}>&lt;/</span><span style={{ color: "#ffa0f3" }}>head</span><span style={{ color: "#9f9f9f" }}>&gt;</span>{"\n"}
+                  {"      "}<span style={{ color: "#9f9f9f" }}>&lt;</span><span style={{ color: "#ffa0f3" }}>body</span><span style={{ color: "#9f9f9f" }}>&gt;</span>{"{"}children{"}"}<span style={{ color: "#9f9f9f" }}>&lt;/</span><span style={{ color: "#ffa0f3" }}>body</span><span style={{ color: "#9f9f9f" }}>&gt;</span>{"\n"}
+                  {"    "}<span style={{ color: "#9f9f9f" }}>&lt;/</span><span style={{ color: "#ffa0f3" }}>html</span><span style={{ color: "#9f9f9f" }}>&gt;</span>{"\n"}
+                  {"  "}{")\n"}
+                  {"}"}
+                </div>
+              </div>
+              <button
+                onClick={() => copyToClipboard(codeBlocks.nextAppRouter, 1)}
+                style={{
+                  padding: "4px 10px",
+                  backgroundColor: copiedIndex === 1 ? "#2A2A2A" : "transparent",
+                  border: "1px solid #2A2A2A",
+                  color: "#9D9D9D",
+                  fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+                  fontSize: "11px",
+                  cursor: "pointer",
+                  transition: "background-color 0.2s ease",
+                  marginTop: "4px",
+                }}
+                onMouseEnter={(e) => {
+                  if (copiedIndex !== 1) e.currentTarget.style.backgroundColor = "#2A2A2A";
+                }}
+                onMouseLeave={(e) => {
+                  if (copiedIndex !== 1) e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                {copiedIndex === 1 ? "Copied!" : "Copy code"}
+              </button>
+            </>
+            )}
+            {activeTab === "pages" && (
+            <>
+              <div
+                style={{
+                  boxSizing: "border-box",
+                  color: "#DDDDDD",
+                  flexShrink: "0",
+                  fontFamily:
+                    '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+                  fontSize: "14px",
+                  fontSynthesis: "none",
+                  fontWeight: 500,
+                  lineHeight: "150%",
+                  MozOsxFontSmoothing: "grayscale",
+                  transformOrigin: "50% 50%",
+                  WebkitFontSmoothing: "antialiased",
+                  whiteSpace: "pre",
+                  width: "fit-content",
+                }}
+              >
+                Next.js (Pages Router)
+              </div>
+              <div
+                style={{
+                  boxSizing: "border-box",
+                  color: "#9D9D9D",
+                  flexShrink: "0",
+                  fontFamily:
+                    '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+                  fontSize: "14px",
+                  fontSynthesis: "none",
+                  fontWeight: 400,
+                  lineHeight: "176%",
+                  MozOsxFontSmoothing: "grayscale",
+                  transformOrigin: "50% 50%",
+                  WebkitFontSmoothing: "antialiased",
+                  whiteSpace: "pre-wrap",
+                  width: "100%",
+                }}
+              >
+                Add this into your pages/_document.tsx:
+              </div>
+              <div
+                style={{
+                  alignItems: "start",
+                  backgroundColor: "#0D0D0D",
+                  borderColor: "#212121",
+                  borderStyle: "solid",
+                  borderWidth: "1px",
+                  boxSizing: "border-box",
+                  contain: "layout",
+                  display: "flex",
+                  flexDirection: "column",
+                  flexShrink: "0",
+                  gap: 0,
+                  height: "fit-content",
+                  justifyContent: "start",
+                  overflowX: "auto",
+                  paddingBlock: "12px",
+                  paddingInline: "16px",
+                  transformOrigin: "50% 50%",
+                  width: "100%",
+                }}
+              >
+                <div
+                  style={{
+                    boxSizing: "border-box",
+                    color: "#C6C6C6",
+                    flexShrink: "0",
+                    fontFamily:
+                      '"EKModenaMono-Regular", "EK Modena Mono", system-ui, monospace',
+                    fontSize: "11px",
+                    fontSynthesis: "none",
+                    fontWeight: 400,
+                    lineHeight: "171%",
+                    MozOsxFontSmoothing: "grayscale",
+                    transformOrigin: "50% 50%",
+                    WebkitFontSmoothing: "antialiased",
+                    whiteSpace: "pre",
+                    width: "fit-content",
+                  }}
+                >
+                    <span style={{ color: "#ffa0f3" }}>import</span> {"{"} Html, Head, Main, NextScript {"}"} <span style={{ color: "#ffa0f3" }}>from</span> <span style={{ color: "#99FFE4" }}>&quot;next/document&quot;</span>;{"\n"}
+                  <span style={{ color: "#ffa0f3" }}>import</span> Script <span style={{ color: "#ffa0f3" }}>from</span> <span style={{ color: "#99FFE4" }}>&quot;next/script&quot;</span>;{"\n\n"}
+                  <span style={{ color: "#ffa0f3" }}>export</span> <span style={{ color: "#ffa0f3" }}>default</span> <span style={{ color: "#ffa0f3" }}>function</span> <span style={{ color: "#FFD494" }}>Document</span>{"() "}{"{\n"}
+                  {"  "}<span style={{ color: "#ffa0f3" }}>return</span> {"(\n"}
+                  {"    "}<span style={{ color: "#9f9f9f" }}>&lt;</span><span style={{ color: "#ffa0f3" }}>Html</span> <span style={{ color: "#FFD494" }}>lang</span>=<span style={{ color: "#99FFE4" }}>&quot;en&quot;</span><span style={{ color: "#9f9f9f" }}>&gt;</span>{"\n"}
+                  {"      "}<span style={{ color: "#9f9f9f" }}>&lt;</span><span style={{ color: "#ffa0f3" }}>Head</span><span style={{ color: "#9f9f9f" }}>&gt;</span>{"\n"}
+                  {"        "}{"{"}<span style={{ color: "#ffa0f3" }}>process</span>.env.NODE_ENV === <span style={{ color: "#99FFE4" }}>&quot;development&quot;</span> && {"(\n"}
+                  {"          "}<span style={{ color: "#9f9f9f" }}>&lt;</span><span style={{ color: "#ffa0f3" }}>Script</span>{"\n"}
+                  {"            "}<span style={{ color: "#FFD494" }}>src</span>=<span style={{ color: "#99FFE4" }}>&quot;//unpkg.com/react-grab/dist/index.global.js&quot;</span>{"\n"}
+                  {"            "}<span style={{ color: "#FFD494" }}>crossOrigin</span>=<span style={{ color: "#99FFE4" }}>&quot;anonymous&quot;</span>{"\n"}
+                  {"            "}<span style={{ color: "#FFD494" }}>strategy</span>=<span style={{ color: "#99FFE4" }}>&quot;beforeInteractive&quot;</span>{"\n"}
+                  {"            "}<span style={{ color: "#FFD494" }}>data-enabled</span>=<span style={{ color: "#99FFE4" }}>&quot;true&quot;</span>{"\n"}
+                  {"          "}<span style={{ color: "#9f9f9f" }}>{"/>"}</span>{"\n"}
+                  {"        "}{")"}{"}"}
+                  {"\n"}
+                  {"      "}<span style={{ color: "#9f9f9f" }}>&lt;/</span><span style={{ color: "#ffa0f3" }}>Head</span><span style={{ color: "#9f9f9f" }}>&gt;</span>{"\n"}
+                  {"      "}<span style={{ color: "#9f9f9f" }}>&lt;</span><span style={{ color: "#ffa0f3" }}>body</span><span style={{ color: "#9f9f9f" }}>&gt;</span>{"\n"}
+                  {"        "}<span style={{ color: "#9f9f9f" }}>&lt;</span><span style={{ color: "#ffa0f3" }}>Main</span> <span style={{ color: "#9f9f9f" }}>{"/>"}</span>{"\n"}
+                  {"        "}<span style={{ color: "#9f9f9f" }}>&lt;</span><span style={{ color: "#ffa0f3" }}>NextScript</span> <span style={{ color: "#9f9f9f" }}>{"/>"}</span>{"\n"}
+                  {"      "}<span style={{ color: "#9f9f9f" }}>&lt;/</span><span style={{ color: "#ffa0f3" }}>body</span><span style={{ color: "#9f9f9f" }}>&gt;</span>{"\n"}
+                  {"    "}<span style={{ color: "#9f9f9f" }}>&lt;/</span><span style={{ color: "#ffa0f3" }}>Html</span><span style={{ color: "#9f9f9f" }}>&gt;</span>{"\n"}
+                  {"  "}{")\n"}
+                  {"}"}
+                </div>
+              </div>
+              <button
+                onClick={() => copyToClipboard(codeBlocks.nextPagesRouter, 2)}
+                style={{
+                  padding: "4px 10px",
+                  backgroundColor: copiedIndex === 2 ? "#2A2A2A" : "transparent",
+                  border: "1px solid #2A2A2A",
+                  color: "#9D9D9D",
+                  fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+                  fontSize: "11px",
+                  cursor: "pointer",
+                  transition: "background-color 0.2s ease",
+                  marginTop: "4px",
+                }}
+                onMouseEnter={(e) => {
+                  if (copiedIndex !== 2) e.currentTarget.style.backgroundColor = "#2A2A2A";
+                }}
+                onMouseLeave={(e) => {
+                  if (copiedIndex !== 2) e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                {copiedIndex === 2 ? "Copied!" : "Copy code"}
+              </button>
+            </>
+            )}
+            {activeTab === "vite" && (
+            <>
+              <div
+                style={{
+                  boxSizing: "border-box",
+                  color: "#DDDDDD",
+                  flexShrink: "0",
+                  fontFamily:
+                    '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+                  fontSize: "14px",
+                  fontSynthesis: "none",
+                  fontWeight: 500,
+                  lineHeight: "150%",
+                  MozOsxFontSmoothing: "grayscale",
+                  transformOrigin: "50% 50%",
+                  WebkitFontSmoothing: "antialiased",
+                  whiteSpace: "pre",
+                  width: "fit-content",
+                }}
+              >
+                Vite
+              </div>
+              <div
+                style={{
+                  boxSizing: "border-box",
+                  color: "#9D9D9D",
+                  flexShrink: "0",
+                  fontFamily:
+                    '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+                  fontSize: "14px",
+                  fontSynthesis: "none",
+                  fontWeight: 400,
+                  lineHeight: "176%",
+                  MozOsxFontSmoothing: "grayscale",
+                  transformOrigin: "50% 50%",
+                  WebkitFontSmoothing: "antialiased",
+                  whiteSpace: "pre-wrap",
+                  width: "100%",
+                }}
+              >
+                Run npm i react-grab@latest, then add this to your vite.config.ts:
+              </div>
+              <div
+                style={{
+                  alignItems: "start",
+                  backgroundColor: "#0D0D0D",
+                  borderColor: "#212121",
+                  borderStyle: "solid",
+                  borderWidth: "1px",
+                  boxSizing: "border-box",
+                  contain: "layout",
+                  display: "flex",
+                  flexDirection: "column",
+                  flexShrink: "0",
+                  gap: 0,
+                  height: "fit-content",
+                  justifyContent: "start",
+                  overflowX: "auto",
+                  paddingBlock: "12px",
+                  paddingInline: "16px",
+                  transformOrigin: "50% 50%",
+                  width: "100%",
+                }}
+              >
+                <div
+                  style={{
+                    boxSizing: "border-box",
+                    color: "#C6C6C6",
+                    flexShrink: "0",
+                    fontFamily:
+                      '"EKModenaMono-Regular", "EK Modena Mono", system-ui, monospace',
+                    fontSize: "11px",
+                    fontSynthesis: "none",
+                    fontWeight: 400,
+                    lineHeight: "171%",
+                    MozOsxFontSmoothing: "grayscale",
+                    transformOrigin: "50% 50%",
+                    WebkitFontSmoothing: "antialiased",
+                    whiteSpace: "pre",
+                    width: "fit-content",
+                  }}
+                >
+                    <span style={{ color: "#ffa0f3" }}>import</span> {"{"} reactGrab {"}"} <span style={{ color: "#ffa0f3" }}>from</span> <span style={{ color: "#99FFE4" }}>&quot;react-grab/plugins/vite&quot;</span>;{"\n\n"}
+                  <span style={{ color: "#ffa0f3" }}>export</span> <span style={{ color: "#ffa0f3" }}>default</span> <span style={{ color: "#FFD494" }}>defineConfig</span>{"("}{"{\n"}
+                  {"  "}plugins: {"[\n"}
+                  {"    "}<span style={{ color: "#FFD494" }}>reactGrab</span>{"(),\n"}
+                  {"  "}{"]\n"}
+                  {"}"}{")"}
+                </div>
+              </div>
+              <button
+                onClick={() => copyToClipboard(codeBlocks.vite, 3)}
+                style={{
+                  padding: "4px 10px",
+                  backgroundColor: copiedIndex === 3 ? "#2A2A2A" : "transparent",
+                  border: "1px solid #2A2A2A",
+                  color: "#9D9D9D",
+                  fontFamily: '"TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif',
+                  fontSize: "11px",
+                  cursor: "pointer",
+                  transition: "background-color 0.2s ease",
+                  marginTop: "4px",
+                }}
+                onMouseEnter={(e) => {
+                  if (copiedIndex !== 3) e.currentTarget.style.backgroundColor = "#2A2A2A";
+                }}
+                onMouseLeave={(e) => {
+                  if (copiedIndex !== 3) e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                {copiedIndex === 3 ? "Copied!" : "Copy code"}
+              </button>
+            </>
+            )}
+          </div>
         </div>
       </div>
     </div>
