@@ -4,6 +4,7 @@
   --background: #1e1e1e;
   --foreground: #ededed;
   --font-grotesk: "TestDie-Grotesk-VF", "Test Die Grotesk VF", system-ui, sans-serif;
+  --font-enduro: "Enduro-Medium", "Enduro Medium", system-ui, sans-serif;
 }
 
 @theme inline {
@@ -12,6 +13,7 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-grotesk: var(--font-grotesk);
+  --font-enduro: var(--font-enduro);
 }
 
 body {

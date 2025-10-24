@@ -5,25 +5,22 @@ interface LogoTextInterface {
 }
 
 export const LogoText = ({ size = 'lg' }: LogoTextInterface) => {
-  const isLarge = size === 'lg' || size === 'base';
-  const isBase = size === 'base';
+  const sizeClasses = {
+    lg: { iconSize: 20, textSize: 'text-lg', gap: 'gap-0.5' },
+    base: { iconSize: 20, textSize: 'text-base', gap: 'gap-0.5' },
+    sm: { iconSize: 16, textSize: 'text-sm', gap: 'gap-0' },
+  };
+
+  const config = sizeClasses[size];
 
   return (
-    <div className={`flex items-center ${isLarge ? 'gap-0.5' : 'gap-0'}`}>
+    <div className={`flex items-center ${config.gap}`}>
       <IconLogo
-        width={isLarge ? 20 : isBase ? 18 : 15}
-        height={isLarge ? 20 : isBase ? 18 : 15}
+        width={config.iconSize}
+        height={config.iconSize}
         className="text-white"
       />
-      <span
-        className={`font-medium text-[#DDDDDD] ${isLarge ? 'text-lg' : isBase ? 'text-base' : 'text-[12.5px]'}`}
-        style={{
-          fontFamily: '"Enduro-Medium", "Enduro Medium", system-ui, sans-serif',
-          lineHeight: '150%',
-          WebkitFontSmoothing: 'antialiased',
-          MozOsxFontSmoothing: 'grayscale',
-        }}
-      >
+      <span className={`font-medium text-[#DDDDDD] ${config.textSize} leading-normal font-enduro`}>
         React Grab
       </span>
     </div>
