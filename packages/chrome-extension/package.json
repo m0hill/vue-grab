@@ -1,33 +1,50 @@
 {
   "name": "vue-grab-chrome-extension",
-  "version": "0.0.1",
-  "description": "Chrome extension for Vue Grab - grab any element in your Vue app",
+  "version": "1.0.0",
+  "description": "Chrome extension for Vue Grab - grab any element in your Vue app and send it to AI coding assistants",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node build.js",
     "clean": "rm -rf dist",
+    "generate-icons": "node generate-icons.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "vue",
+    "vuejs",
     "grab",
     "chrome-extension",
+    "browser-extension",
     "cursor",
     "claude",
-    "code"
+    "ai-assistant",
+    "developer-tools",
+    "devtools"
   ],
   "author": {
     "name": "Mohil Garg",
     "email": "mohilg@outlook.com"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/m0hill/vue-grab.git",
+    "directory": "packages/chrome-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/m0hill/vue-grab/issues"
+  },
+  "homepage": "https://github.com/m0hill/vue-grab#readme",
   "license": "MIT",
   "devDependencies": {
     "@types/chrome": "^0.0.277",
     "@vitest/coverage-v8": "^2.1.8",
     "happy-dom": "^15.11.7",
     "vitest": "^2.1.8"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.33.0"
   }
 }
