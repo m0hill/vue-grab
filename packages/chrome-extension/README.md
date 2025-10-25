@@ -61,6 +61,7 @@ The extension consists of:
 - `src/content.js`: Content script that injects Vue Grab
 - `src/popup.html` & `src/popup.js`: Settings UI
 - `build.js`: Build script
+- `test/`: Test files
 
 To rebuild after changes:
 ```bash
@@ -68,6 +69,29 @@ pnpm --filter chrome-extension build
 ```
 
 Then reload the extension in Chrome (click the refresh icon on the extension card).
+
+### Testing
+
+The extension includes comprehensive unit tests using Vitest:
+
+```bash
+# Run tests once
+pnpm --filter chrome-extension test
+
+# Run tests in watch mode
+pnpm --filter chrome-extension test:watch
+
+# Run tests with coverage
+pnpm --filter chrome-extension test:coverage
+```
+
+Tests cover:
+- Content script injection logic
+- Popup settings loading and saving
+- Chrome API interactions
+- Edge cases and error handling
+
+See [test/README.md](test/README.md) for more details.
 
 ## How It Works
 
