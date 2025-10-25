@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "pnpm --filter vue-grab build",
+    "build:extension": "pnpm --filter vue-grab build && pnpm --filter vue-grab-chrome-extension build",
     "dev": "pnpm --filter vue-grab dev",
     "dev:kitchen-sink": "pnpm --filter kitchen-sink dev",
     "dev:vue2": "pnpm --filter vue2-demo dev",
