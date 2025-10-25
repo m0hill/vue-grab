@@ -1,4 +1,4 @@
-# Vue Grab
+# <img src="./vue-grab-icon.svg" width="60" align="center" /> Vue Grab
 
 [![size](https://img.shields.io/bundlephobia/minzip/vue-grab?label=gzip&style=flat&colorA=000000&colorB=000000)](https://bundlephobia.com/package/vue-grab)
 [![version](https://img.shields.io/npm/v/vue-grab?style=flat&colorA=000000&colorB=000000)](https://npmjs.com/package/vue-grab)
